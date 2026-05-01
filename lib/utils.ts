@@ -19,6 +19,7 @@ export function formatPrice(price: number): string {
 }
 
 export function imageUrl(filename: string): string {
+  if (!filename) return "";
   if (filename.startsWith("http")) return filename;
-  return `/uploads/${filename}`;
+  return `/api/file/${filename}`;
 }

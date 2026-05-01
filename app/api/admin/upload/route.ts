@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       .slice(0, 40);
     const filename = `${basename}-${Date.now()}.${ext}`;
 
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    const uploadsDir = path.join(process.cwd(), "data", "uploads");
     await mkdir(uploadsDir, { recursive: true });
 
     const bytes = await file.arrayBuffer();
