@@ -2,6 +2,8 @@ import { getDb, Category } from "@/lib/db";
 import PhotoForm from "@/components/admin/PhotoForm";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Nouvelle photo — Admin" };
 
 export default function NewPhotoPage() {
