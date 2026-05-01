@@ -33,6 +33,7 @@ export async function PUT(req: NextRequest) {
       hero_image,
       hero_position,
       portrait_image,
+      notification_email,
       current_password,
       new_password,
     } = body;
@@ -55,6 +56,8 @@ export async function PUT(req: NextRequest) {
         upsert.run("hero_position", hero_position);
       if (portrait_image !== undefined)
         upsert.run("portrait_image", portrait_image);
+      if (notification_email !== undefined)
+        upsert.run("notification_email", notification_email);
     });
     updateSettings();
 

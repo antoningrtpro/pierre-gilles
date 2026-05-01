@@ -101,6 +101,7 @@ db.transaction(() => {
   insertSettingIfAbsent.run("hero_image", "");
   insertSettingIfAbsent.run("hero_position", "center");
   insertSettingIfAbsent.run("portrait_image", "");
+  insertSettingIfAbsent.run("notification_email", "");
 })();
 console.log("✓ Paramètres initialisés (valeurs existantes conservées)");
 

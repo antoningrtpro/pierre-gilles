@@ -64,6 +64,7 @@ export default function AdminSettingsClient({
     tagline: initialSettings.tagline || "La nature dans ses instants les plus silencieux.",
     about_text: initialSettings.about_text || "",
     instagram_url: initialSettings.instagram_url || "https://instagram.com/pierreg_photography",
+    notification_email: initialSettings.notification_email || "",
   });
   const [siteStatus, setSiteStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [siteError, setSiteError] = useState("");
@@ -319,6 +320,19 @@ export default function AdminSettingsClient({
               className="admin-input"
               placeholder="https://instagram.com/..."
             />
+          </div>
+          <div>
+            <label className="admin-label">Email de notification</label>
+            <input
+              type="email"
+              value={siteForm.notification_email}
+              onChange={(e) => setSiteForm({ ...siteForm, notification_email: e.target.value })}
+              className="admin-input"
+              placeholder="votre@email.fr"
+            />
+            <p className="text-xs text-ink/35 mt-1">
+              Recevez un email à chaque nouvelle demande de contact.
+            </p>
           </div>
           <div>
             <label className="admin-label">Texte de présentation (À propos)</label>
