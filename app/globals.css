@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Jost:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-cream: #F7F5F2;
+    --color-ink: #1A1A18;
+    --color-moss: #7C8C6E;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-ink font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3 {
+    @apply font-serif;
+  }
+
+  ::selection {
+    background-color: #7C8C6E30;
+    color: #1A1A18;
+  }
+}
+
+@layer components {
+  /* Fade-in on scroll animation */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  /* Aspect ratios */
+  .aspect-landscape {
+    aspect-ratio: 3 / 2;
+  }
+
+  .aspect-portrait {
+    aspect-ratio: 4 / 5;
+  }
+
+  /* Thin line divider */
+  .divider {
+    @apply border-t border-ink/10 my-12;
+  }
+
+  /* Admin form helpers */
+  .admin-label {
+    @apply block text-xs tracking-widest uppercase text-ink/50 mb-1.5;
+  }
+
+  .admin-input {
+    @apply w-full border border-ink/20 px-3 py-2.5 text-sm text-ink focus:outline-none focus:border-moss transition-colors bg-white;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

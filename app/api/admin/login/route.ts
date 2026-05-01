@@ -1,0 +1,56 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { getDb, AdminUser } from "@/lib/db";
+import { createSession, COOKIE_NAME } from "@/lib/auth";
+
+export async function POST(req: NextRequest) {
+  try {
+    const { username, password } = await req.json();
+
+    if (!username || !password) {
+      return NextResponse.json(
+        { error: "Identifiant et mot de passe requis." },
+        { status: 400 }
+      );
+    }
+
+    const db = getDb();
+    const admin = db
+      .prepare("SELECT * FROM admin WHERE username = ?")
+      .get(username) as AdminUser | undefined;
+
+    if (!admin) {
+      return NextResponse.json(
+        { error: "Identifiants incorrects." },
+        { status: 401 }
+      );
+    }
+
+    const valid = await bcrypt.compare(password, admin.password_hash);
+    if (!valid) {
+      return NextResponse.json(
+        { error: "Identifiants incorrects." },
+        { status: 401 }
+      );
+    }
+
+    const token = await createSession({
+      adminId: admin.id,
+      username: admin.username,
+    });
+
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
+
+    return response;
+  } catch (err) {
+    console.error("Login error:", err);
+    return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
+  }
+}
