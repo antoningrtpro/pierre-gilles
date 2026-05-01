@@ -60,6 +60,7 @@ export default function HomePage() {
   const aboutText = settings.about_text || "";
   const instagramUrl = settings.instagram_url || "https://instagram.com/pierreg_photography";
   const portraitImageSrc = settings.portrait_image || "https://picsum.photos/seed/portrait/600/800";
+  const heroPosition = settings.hero_position || "center";
 
   // First paragraph only for homepage teaser
   const aboutTeaser = aboutText.split("\n\n")[0] || aboutText;
@@ -74,7 +75,7 @@ export default function HomePage() {
             alt={heroPhoto?.title ?? "Photo d'accueil"}
             fill
             priority
-            className="object-cover object-center"
+            className={`object-cover object-${heroPosition}`}
             sizes="100vw"
           />
         ) : (

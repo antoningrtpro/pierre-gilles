@@ -99,6 +99,7 @@ db.transaction(() => {
   );
   insertSettingIfAbsent.run("instagram_url", "https://instagram.com/pierreg_photography");
   insertSettingIfAbsent.run("hero_image", "");
+  insertSettingIfAbsent.run("hero_position", "center");
   insertSettingIfAbsent.run("portrait_image", "");
 })();
 console.log("✓ Paramètres initialisés (valeurs existantes conservées)");

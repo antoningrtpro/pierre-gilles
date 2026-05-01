@@ -31,6 +31,7 @@ export async function PUT(req: NextRequest) {
       about_text,
       instagram_url,
       hero_image,
+      hero_position,
       portrait_image,
       current_password,
       new_password,
@@ -50,6 +51,8 @@ export async function PUT(req: NextRequest) {
         upsert.run("instagram_url", instagram_url);
       if (hero_image !== undefined)
         upsert.run("hero_image", hero_image);
+      if (hero_position !== undefined)
+        upsert.run("hero_position", hero_position);
       if (portrait_image !== undefined)
         upsert.run("portrait_image", portrait_image);
     });

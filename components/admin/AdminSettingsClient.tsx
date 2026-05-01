@@ -15,6 +15,9 @@ export default function AdminSettingsClient({
   const [heroImage, setHeroImage] = useState(
     initialSettings.hero_image || ""
   );
+  const [heroPosition, setHeroPosition] = useState(
+    initialSettings.hero_position || "center"
+  );
   const [heroStatus, setHeroStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const saveHeroImage = async () => {
@@ -23,7 +26,7 @@ export default function AdminSettingsClient({
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hero_image: heroImage }),
+        body: JSON.stringify({ hero_image: heroImage, hero_position: heroPosition }),
       });
       if (!res.ok) throw new Error();
       setHeroStatus("saved");
@@ -183,6 +186,20 @@ export default function AdminSettingsClient({
           value={heroImage}
           onChange={setHeroImage}
         />
+
+        {/* Position */}
+        <div className="mt-4">
+          <label className="block text-xs text-ink/50 mb-1.5">Position de recadrage</label>
+          <select
+            value={heroPosition}
+            onChange={(e) => setHeroPosition(e.target.value)}
+            className="admin-input bg-white w-48"
+          >
+            <option value="top">Haut</option>
+            <option value="center">Centre (défaut)</option>
+            <option value="bottom">Bas</option>
+          </select>
+        </div>
 
         <div className="flex items-center gap-4 mt-5">
           <button
