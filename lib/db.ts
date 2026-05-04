@@ -79,6 +79,13 @@ function initializeSchema(db: Database.Database) {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS photo_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      photo_id INTEGER REFERENCES photos(id) ON DELETE CASCADE,
+      filename TEXT NOT NULL,
+      position INTEGER DEFAULT 0
+    );
   `);
 
   // Seed default settings if not present
@@ -155,6 +162,13 @@ export interface AdminUser {
   id: number;
   username: string;
   password_hash: string;
+}
+
+export interface PhotoImage {
+  id: number;
+  photo_id: number;
+  filename: string;
+  position: number;
 }
 
 export interface Settings {

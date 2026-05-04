@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { title, slug, description, category_id, filename, featured, position } =
+    const { title, slug, description, category_id, filename, extra_images, featured, position, formats } =
       body;
 
     if (!title?.trim() || !filename?.trim()) {
@@ -54,7 +54,29 @@ export async function POST(req: NextRequest) {
         position ?? 0
       );
 
-    return NextResponse.json({ id: result.lastInsertRowid }, { status: 201 });
+    const photoId = result.lastInsertRowid;
+
+    // Save extra images
+    if (Array.isArray(extra_images) && extra_images.length > 0) {
+      const insertImg = db.prepare(
+        "INSERT INTO photo_images (photo_id, filename, position) VALUES (?, ?, ?)"
+      );
+      extra_images.forEach((f: string, i: number) => insertImg.run(photoId, f, i));
+    }
+
+    // Save formats
+    if (Array.isArray(formats) && formats.length > 0) {
+      const insertFmt = db.prepare(
+        "INSERT INTO formats (photo_id, label, price) VALUES (?, ?, ?)"
+      );
+      for (const fmt of formats) {
+        if (fmt.label && fmt.price !== undefined) {
+          insertFmt.run(photoId, fmt.label.trim(), Number(fmt.price));
+        }
+      }
+    }
+
+    return NextResponse.json({ id: photoId }, { status: 201 });
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes("UNIQUE")) {
       return NextResponse.json(

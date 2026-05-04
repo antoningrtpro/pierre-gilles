@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDb, Category, Photo, Format } from "@/lib/db";
+import { getDb, Category, Photo, Format, PhotoImage } from "@/lib/db";
 import PhotoForm from "@/components/admin/PhotoForm";
 import type { Metadata } from "next";
 
@@ -32,6 +32,10 @@ export default async function EditPhotoPage({ params }: Props) {
     .prepare("SELECT * FROM formats WHERE photo_id = ? ORDER BY price ASC")
     .all(photoId) as Format[];
 
+  const extraImages = db
+    .prepare("SELECT * FROM photo_images WHERE photo_id = ? ORDER BY position ASC")
+    .all(photoId) as PhotoImage[];
+
   const categories = db
     .prepare("SELECT id, name FROM categories ORDER BY position ASC")
     .all() as Category[];
@@ -52,6 +56,7 @@ export default async function EditPhotoPage({ params }: Props) {
           description: photo.description || "",
           category_id: photo.category_id,
           filename: photo.filename,
+          extraImages: extraImages.map((i) => i.filename),
           featured: !!photo.featured,
           position: photo.position,
           formats: formats.map((f) => ({

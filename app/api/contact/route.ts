@@ -9,9 +9,9 @@ export async function POST(req: NextRequest) {
       body;
 
     // Validate required fields
-    if (!name?.trim() || !email?.trim() || !message?.trim()) {
+    if (!name?.trim() || !email?.trim()) {
       return NextResponse.json(
-        { error: "Nom, email et message sont requis." },
+        { error: "Nom et email sont requis." },
         { status: 400 }
       );
     }
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const validSubjects = ["Achat", "Collaboration", "Autre"];
+    const validSubjects = ["Tirage", "Achat", "Collaboration", "Autre"];
     const resolvedSubject =
       subject && validSubjects.includes(subject) ? subject : "Autre";
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       resolvedSubject,
       photo_title?.trim() || null,
       format_selected?.trim() || null,
-      message.trim()
+      message?.trim() || ""
     );
 
     // ── Notification email ──────────────────────────────────

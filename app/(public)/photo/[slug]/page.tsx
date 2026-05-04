@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getDb, Photo, Format } from "@/lib/db";
+import { getDb, Photo, Format, PhotoImage } from "@/lib/db";
 import { imageUrl, formatPrice } from "@/lib/utils";
 import ContactForm from "@/components/public/ContactForm";
 import PhotoCard from "@/components/public/PhotoCard";
+import PhotoGallery from "@/components/public/PhotoGallery";
 import RevealOnScroll from "@/components/public/RevealOnScroll";
 import type { Metadata } from "next";
 
@@ -49,6 +50,12 @@ export default async function PhotoPage({ params }: Props) {
   const formats = db
     .prepare("SELECT * FROM formats WHERE photo_id = ? ORDER BY price ASC")
     .all(photo.id) as Format[];
+
+  const extraImages = db
+    .prepare("SELECT * FROM photo_images WHERE photo_id = ? ORDER BY position ASC")
+    .all(photo.id) as PhotoImage[];
+
+  const allImages = [photo.filename, ...extraImages.map((i) => i.filename)];
 
   const related = photo.category_id
     ? (db
@@ -111,42 +118,14 @@ export default async function PhotoPage({ params }: Props) {
         {/* Corps 2 colonnes */}
         <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
 
-          {/* ── 2/3 gauche : image ───────────────────────────── */}
+          {/* ── 1/2 gauche : galerie ─────────────────────────── */}
           <div className="
             lg:flex-[1] lg:overflow-hidden
-            flex items-center justify-center
             bg-[#F0EDE8]
             lg:h-[calc(100dvh-theme(spacing.20)-41px)]
             min-h-[50vw] lg:min-h-0
           ">
-            <div className="
-              m-4 md:m-6 lg:m-10
-              bg-white
-              shadow-[0_8px_48px_rgba(26,26,24,0.12)]
-              flex flex-col
-            ">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageUrl(photo.filename)}
-                alt={photo.title}
-                className="block w-auto h-auto p-3 md:p-5"
-                style={{
-                  maxWidth: "calc(100vw - 2rem)",
-                  maxHeight: "calc(100dvh - 5rem - 41px - 6rem)",
-                  objectFit: "contain",
-                }}
-              />
-              <div className="px-3 md:px-5 pb-3 md:pb-4 flex items-center justify-between gap-4 shrink-0">
-                <p className="text-[10px] tracking-widest uppercase text-ink/30">
-                  Tirage Fine Art — Édition limitée
-                </p>
-                {minPrice && (
-                  <p className="text-[10px] tracking-widest uppercase text-ink/30 whitespace-nowrap">
-                    À partir de {formatPrice(minPrice)}
-                  </p>
-                )}
-              </div>
-            </div>
+            <PhotoGallery images={allImages} title={photo.title} minPrice={minPrice} />
           </div>
 
           {/* ── 1/3 droite : détails scrollable ──────────────── */}
@@ -212,8 +191,8 @@ export default async function PhotoPage({ params }: Props) {
 
               {/* Réassurance */}
               <div className="border-t border-ink/8 pt-6 grid grid-cols-3 gap-4">
-                <ReassuranceItem icon="check" title="Édition limitée" desc="Numéroté et signé." />
-                <ReassuranceItem icon="quality" title="Fine Art" desc="Papier Hahnemühle." />
+                <ReassuranceItem icon="check" title="Édition limitée" desc="20 exemplaires" />
+                <ReassuranceItem icon="quality" title="Papier de qualité" desc="Avec ou sans encadrement" />
                 <ReassuranceItem icon="shipping" title="Livraison" desc="France & international." />
               </div>
 

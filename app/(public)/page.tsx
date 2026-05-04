@@ -25,6 +25,10 @@ function getHomeData() {
     )
     .all() as Photo[];
 
+  const allPhotos = db
+    .prepare("SELECT id, title, slug FROM photos ORDER BY position ASC, created_at DESC")
+    .all() as { id: number; title: string; slug: string }[];
+
   const categories = db
     .prepare(
       `SELECT c.*, COUNT(p.id) as photo_count
@@ -50,11 +54,11 @@ function getHomeData() {
     s.hero_image ||
     (heroPhoto ? heroPhoto.filename : "");
 
-  return { featuredPhotos, categories, heroPhoto, heroImageSrc, settings: s };
+  return { featuredPhotos, allPhotos, categories, heroPhoto, heroImageSrc, settings: s };
 }
 
 export default function HomePage() {
-  const { featuredPhotos, categories, heroPhoto, heroImageSrc, settings } = getHomeData();
+  const { featuredPhotos, allPhotos, categories, heroPhoto, heroImageSrc, settings } = getHomeData();
 
   const tagline = settings.tagline || "Le monde vivant, saisi dans l'instant";
   const aboutText = settings.about_text || "";
@@ -101,7 +105,7 @@ export default function HomePage() {
               href="/contact"
               className="text-cream/60 text-xs tracking-widest uppercase hover:text-cream transition-colors"
             >
-              Prévoir une session
+              Effectuer un tirage
             </Link>
           </div>
         </div>
@@ -287,25 +291,27 @@ export default function HomePage() {
                   Un projet,<br />une idée ?
                 </h2>
                 <p className="text-ink/65 text-base leading-relaxed mb-10">
-                  Commande d&apos;un tirage sur mesure, reportage nature,
-                  illustration éditoriale ou collaboration de marque — Pierre
-                  étudie chaque demande avec soin et répond personnellement
-                  sous 48h.
+                  Chaque tirage peut être adapté selon vos besoins : format,
+                  finition ou présentation — Pierre étudie chaque demande avec
+                  attention et répond personnellement.
                 </p>
 
                 {/* Prestations */}
                 <div className="space-y-0 border border-ink/10 divide-y divide-ink/8 mb-10">
                   {[
-                    { label: "Tirages Fine Art", desc: "Sur mesure, encadrés ou non" },
-                    { label: "Reportage nature", desc: "Paysage, faune, milieux sauvages" },
-                    { label: "Cession de droits", desc: "Presse, édition, usage commercial" },
-                    { label: "Collaboration marque", desc: "Contenu visuel, direction artistique" },
+                    { label: "Tirages", desc: "Photographies disponibles en différents formats" },
+                    { label: "Finitions", desc: "Supports et encadrements selon vos préférences" },
+                    { label: "Sur mesure", desc: "Adaptation possible à votre espace ou projet" },
+                    { label: "Contact", desc: "Échange direct pour toute demande" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between px-4 py-3.5">
                       <span className="text-sm font-medium text-ink">{item.label}</span>
                       <span className="text-xs text-ink/45">{item.desc}</span>
                     </div>
                   ))}
+                  <div className="px-4 py-3 bg-ink/2">
+                    <p className="text-xs text-ink/40">Formats disponibles : 30×40 cm ou 50×70 cm — Pas de numérique</p>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 text-ink/40">
@@ -321,7 +327,7 @@ export default function HomePage() {
                 <p className="text-xs tracking-widest uppercase text-ink/40 mb-8">
                   Envoyer un message
                 </p>
-                <ContactForm defaultSubject="Collaboration" />
+                <ContactForm defaultSubject="Tirage" photos={allPhotos} />
               </div>
             </RevealOnScroll>
 

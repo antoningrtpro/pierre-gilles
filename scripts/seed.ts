@@ -74,6 +74,12 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS photo_images (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    photo_id INTEGER REFERENCES photos(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    position INTEGER DEFAULT 0
+  );
 `);
 
 // ─── Admin (jamais écrasé) ────────────────────────────────────────────────────
@@ -95,7 +101,7 @@ db.transaction(() => {
   insertSettingIfAbsent.run("tagline", "Le monde vivant, saisi dans l'instant");
   insertSettingIfAbsent.run(
     "about_text",
-    "Photographe naturaliste basé en France, Pierre G. parcourt les paysages sauvages à la recherche de la lumière fugace, du silence habité et des beautés discrètes du monde vivant.\n\nFormé à l'école documentaire, il travaille essentiellement en lumière naturelle, privilégiant l'aube et le crépuscule — ces heures où la forêt retient son souffle et où la lumière devient matière.\n\nSes tirages Fine Art, réalisés sur papier Hahnemühle, sont disponibles en édition limitée."
+    "Photographe basé en France, Pierre G. développe un travail centré sur la recherche d'instants forts, où lumière, mouvement et composition se rejoignent.\n\nIl s'attache à saisir des moments rares — une scène fugace, une émotion ou un paysage qui transforme un instant ordinaire en image marquante.\n\nEn photographie animalière, son approche repose sur la patience et le respect du vivant, avec des images issues d'heures d'observation, sans intervention."
   );
   insertSettingIfAbsent.run("instagram_url", "https://instagram.com/pierreg_photography");
   insertSettingIfAbsent.run("hero_image", "");

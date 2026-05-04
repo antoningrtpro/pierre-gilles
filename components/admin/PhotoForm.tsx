@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ImageUpload from "./ImageUpload";
+import MultiImageUpload from "./MultiImageUpload";
 import { slugify } from "@/lib/utils";
 
 interface Format {
@@ -24,12 +24,18 @@ interface PhotoFormProps {
     description: string;
     category_id: number | null;
     filename: string;
+    extraImages: string[];
     featured: boolean;
     position: number;
     formats: { id?: number; label: string; price: number }[];
   };
   categories: Category[];
 }
+
+const DEFAULT_FORMATS: Format[] = [
+  { label: "30×40 cm Fine Art mat (sans cadre)", price: "90" },
+  { label: "50×70 cm Fine Art mat (sans cadre)", price: "190" },
+];
 
 export default function PhotoForm({
   photoId,
@@ -44,9 +50,16 @@ export default function PhotoForm({
     slug: initialData?.slug || "",
     description: initialData?.description || "",
     category_id: initialData?.category_id?.toString() || "",
-    filename: initialData?.filename || "",
     featured: initialData?.featured || false,
     position: initialData?.position?.toString() || "0",
+  });
+
+  // All images: [cover, ...extras]
+  const [images, setImages] = useState<string[]>(() => {
+    if (initialData) {
+      return [initialData.filename, ...initialData.extraImages].filter(Boolean);
+    }
+    return [];
   });
 
   const [formats, setFormats] = useState<Format[]>(
@@ -54,13 +67,12 @@ export default function PhotoForm({
       id: f.id,
       label: f.label,
       price: f.price.toString(),
-    })) || [{ label: "", price: "" }]
+    })) || DEFAULT_FORMATS
   );
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Auto-generate slug from title (only when creating)
   const handleTitleChange = (value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -82,6 +94,10 @@ export default function PhotoForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (images.length === 0) {
+      setError("Ajoutez au moins une image.");
+      return;
+    }
     setSaving(true);
     setError("");
 
@@ -90,7 +106,8 @@ export default function PhotoForm({
       slug: form.slug.trim() || slugify(form.title),
       description: form.description.trim(),
       category_id: form.category_id ? Number(form.category_id) : null,
-      filename: form.filename.trim(),
+      filename: images[0],
+      extra_images: images.slice(1),
       featured: form.featured,
       position: Number(form.position),
       formats: formats
@@ -103,9 +120,7 @@ export default function PhotoForm({
     };
 
     try {
-      const url = isEdit
-        ? `/api/admin/photos/${photoId}`
-        : "/api/admin/photos";
+      const url = isEdit ? `/api/admin/photos/${photoId}` : "/api/admin/photos";
       const method = isEdit ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -117,16 +132,6 @@ export default function PhotoForm({
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Erreur lors de la sauvegarde.");
-      }
-
-      // If creating, get the new ID and save formats
-      if (!isEdit) {
-        const { id } = await res.json();
-        await fetch(`/api/admin/photos/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, formats: payload.formats }),
-        });
       }
 
       router.push("/admin/photos");
@@ -231,7 +236,7 @@ export default function PhotoForm({
                     type="text"
                     value={f.label}
                     onChange={(e) => updateFormat(i, "label", e.target.value)}
-                    placeholder="30×40 cm — Fine Art"
+                    placeholder="30×40 cm Fine Art mat"
                     className="admin-input flex-1"
                   />
                   <input
@@ -264,19 +269,16 @@ export default function PhotoForm({
           </div>
         </div>
 
-        {/* Right: image */}
+        {/* Right: images */}
         <div>
-          <label className="admin-label">Image *</label>
-          <ImageUpload
-            value={form.filename}
-            onChange={(filename) => setForm({ ...form, filename })}
-          />
+          <label className="admin-label">
+            Images * {images.length > 0 && `(${images.length})`}
+          </label>
+          <MultiImageUpload images={images} onChange={setImages} />
         </div>
       </div>
 
-      {error && (
-        <p className="text-red-500 text-sm">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       <div className="flex items-center gap-4 pt-2 border-t border-ink/8">
         <button

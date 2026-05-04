@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, Photo, Format } from "@/lib/db";
+import { getDb, Photo, Format, PhotoImage } from "@/lib/db";
 import { requireAdmin } from "@/lib/adminAuth";
 import { slugify } from "@/lib/utils";
 import fs from "fs";
@@ -27,7 +27,15 @@ export async function GET(req: NextRequest, { params }: Params) {
     .prepare("SELECT * FROM formats WHERE photo_id = ? ORDER BY price ASC")
     .all(photo.id) as Format[];
 
-  return NextResponse.json({ ...photo, formats });
+  const extraImages = db
+    .prepare("SELECT * FROM photo_images WHERE photo_id = ? ORDER BY position ASC")
+    .all(photo.id) as PhotoImage[];
+
+  return NextResponse.json({
+    ...photo,
+    formats,
+    extra_images: extraImages.map((i) => i.filename),
+  });
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
@@ -45,6 +53,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       description,
       category_id,
       filename,
+      extra_images,
       featured,
       position,
       formats,
@@ -96,6 +105,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
           insertFmt.run(photoId, fmt.label.trim(), Number(fmt.price));
         }
       }
+    }
+
+    // Update extra images if provided
+    if (Array.isArray(extra_images)) {
+      db.prepare("DELETE FROM photo_images WHERE photo_id = ?").run(photoId);
+      const insertImg = db.prepare(
+        "INSERT INTO photo_images (photo_id, filename, position) VALUES (?, ?, ?)"
+      );
+      extra_images.forEach((f: string, i: number) => insertImg.run(photoId, f, i));
     }
 
     return NextResponse.json({ ok: true });
