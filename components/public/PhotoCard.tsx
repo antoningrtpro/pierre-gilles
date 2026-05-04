@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { imageUrl, formatPrice } from "@/lib/utils";
 import { Photo } from "@/lib/db";
@@ -13,23 +12,16 @@ interface PhotoCardProps {
 export default function PhotoCard({
   photo,
   index = 0,
-  variant = "landscape",
 }: PhotoCardProps) {
-  const aspectClass =
-    variant === "portrait" ? "aspect-portrait" : "aspect-landscape";
-
   return (
     <RevealOnScroll delay={index * 80}>
       <Link href={`/photo/${photo.slug}`} className="group block">
-        <div
-          className={`relative overflow-hidden bg-ink/5 ${aspectClass} rounded-sm`}
-        >
-          <Image
+        <div className="relative overflow-hidden bg-ink/5 rounded-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src={imageUrl(photo.filename)}
             alt={photo.title}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="block w-full h-auto transition-transform duration-700 group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors duration-500" />
         </div>

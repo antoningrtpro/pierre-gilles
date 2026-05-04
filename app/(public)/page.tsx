@@ -56,7 +56,7 @@ function getHomeData() {
 export default function HomePage() {
   const { featuredPhotos, categories, heroPhoto, heroImageSrc, settings } = getHomeData();
 
-  const tagline = settings.tagline || "La nature dans ses instants les plus silencieux.";
+  const tagline = settings.tagline || "Le monde vivant, saisi dans l'instant";
   const aboutText = settings.about_text || "";
   const instagramUrl = settings.instagram_url || "https://instagram.com/pierreg_photography";
   const portraitImageSrc = settings.portrait_image || "https://picsum.photos/seed/portrait/600/800";
@@ -130,7 +130,7 @@ export default function HomePage() {
             </div>
           </RevealOnScroll>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 items-start">
             {featuredPhotos.map((photo, i) => (
               <PhotoCard key={photo.id} photo={photo} index={i} />
             ))}
@@ -190,9 +190,9 @@ export default function HomePage() {
                 {/* Traits */}
                 <div className="space-y-3 mb-10">
                   {[
-                    { label: "Approche", value: "Lumière naturelle, aube et crépuscule" },
+                    { label: "Approche", value: "Lumière naturelle, contraste et instants justes" },
                     { label: "Technique", value: "Tirages Fine Art sur Hahnemühle" },
-                    { label: "Territoire", value: "Paysages et faune sauvage, France" },
+                    { label: "Territoire", value: "Faune & paysages — exploration du monde" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline gap-4 border-b border-ink/8 pb-3">
                       <span className="text-xs tracking-widest uppercase text-ink/40 w-24 shrink-0">

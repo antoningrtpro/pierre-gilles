@@ -39,7 +39,7 @@ export default function GalleriesPage() {
         {categories.length === 0 ? (
           <p className="text-ink/40 text-sm">Aucune galerie pour le moment.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 items-start">
             {categories.map((cat, i) => (
               <RevealOnScroll key={cat.id} delay={i * 80}>
                 <Link

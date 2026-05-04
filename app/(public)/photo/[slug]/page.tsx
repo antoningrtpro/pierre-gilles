@@ -267,9 +267,9 @@ export default async function PhotoPage({ params }: Props) {
 
                 <div className="space-y-3 mb-10">
                   {[
-                    { label: "Approche", value: "Lumière naturelle, aube et crépuscule" },
+                    { label: "Approche", value: "Lumière naturelle, contraste et instants justes" },
                     { label: "Technique", value: "Tirages Fine Art sur Hahnemühle" },
-                    { label: "Territoire", value: "Paysages et faune sauvage, France" },
+                    { label: "Territoire", value: "Faune & paysages — exploration du monde" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline gap-4 border-b border-ink/8 pb-3">
                       <span className="text-xs tracking-widest uppercase text-ink/40 w-24 shrink-0">
@@ -329,7 +329,7 @@ export default async function PhotoPage({ params }: Props) {
               </div>
             </RevealOnScroll>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 items-start">
               {related.map((r, i) => (
                 <PhotoCard key={r.id} photo={r} index={i} />
               ))}

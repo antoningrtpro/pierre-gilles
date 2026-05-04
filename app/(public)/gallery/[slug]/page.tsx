@@ -71,7 +71,7 @@ export default async function GalleryPage({ params }: Props) {
             </p>
           </RevealOnScroll>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 items-start">
             {photos.map((photo, i) => (
               <PhotoCard key={photo.id} photo={photo} index={i} />
             ))}

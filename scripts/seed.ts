@@ -92,7 +92,7 @@ const insertSettingIfAbsent = db.prepare(
 );
 db.transaction(() => {
   insertSettingIfAbsent.run("photographer_name", "Pierre G.");
-  insertSettingIfAbsent.run("tagline", "La nature dans ses instants les plus silencieux.");
+  insertSettingIfAbsent.run("tagline", "Le monde vivant, saisi dans l'instant");
   insertSettingIfAbsent.run(
     "about_text",
     "Photographe naturaliste basé en France, Pierre G. parcourt les paysages sauvages à la recherche de la lumière fugace, du silence habité et des beautés discrètes du monde vivant.\n\nFormé à l'école documentaire, il travaille essentiellement en lumière naturelle, privilégiant l'aube et le crépuscule — ces heures où la forêt retient son souffle et où la lumière devient matière.\n\nSes tirages Fine Art, réalisés sur papier Hahnemühle, sont disponibles en édition limitée."
