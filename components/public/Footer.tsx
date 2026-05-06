@@ -43,7 +43,15 @@ export default function Footer() {
           </a>
           <span className="text-ink/20">·</span>
           <p className="text-xs text-ink/40">
-            © {new Date().getFullYear()} Pierre G.
+            © {new Date().getFullYear()} Pierre G. · Designed with ❤️ by{" "}
+            <a
+              href="https://develop-in.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-moss transition-colors underline underline-offset-2"
+            >
+              develop-in
+            </a>
           </p>
         </div>
       </div>

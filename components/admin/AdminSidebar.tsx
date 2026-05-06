@@ -65,7 +65,7 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className={`hidden md:flex flex-col bg-ink text-cream transition-all duration-300 ${
+      className={`hidden md:flex flex-col bg-ink text-cream transition-all duration-300 sticky top-0 h-screen overflow-hidden shrink-0 ${
         collapsed ? "w-16" : "w-56"
       }`}
     >

@@ -55,7 +55,7 @@ export async function PUT(req: NextRequest) {
       const valid = await bcrypt.compare(current_password, admin.password_hash);
       if (!valid) return NextResponse.json({ error: "Mot de passe actuel incorrect." }, { status: 400 });
       const hash = await bcrypt.hash(new_password, 12);
-      await adminDb.collection("config").doc("admin").update({ password_hash: hash });
+      await adminDb.collection("config").doc("admin").update({ password_hash: hash, password_changed: true });
     }
 
     return NextResponse.json({ ok: true });

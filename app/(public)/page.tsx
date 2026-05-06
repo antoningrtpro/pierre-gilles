@@ -44,8 +44,6 @@ export default async function HomePage() {
   const heroPosition = (s as any).hero_position || "center";
   const heroImageSrc: string = (s as any).hero_image || (featuredPhotos[0]?.filename ?? "");
 
-  // First paragraph only for homepage teaser
-  const aboutTeaser = aboutText.split("\n\n")[0] || aboutText;
 
   return (
     <>
@@ -165,9 +163,11 @@ export default async function HomePage() {
                   Qui<br />suis-je ?
                 </h2>
 
-                <p className="text-ink/70 text-base leading-relaxed mb-6">
-                  {aboutTeaser}
-                </p>
+                <div className="space-y-4 text-ink/70 text-base leading-relaxed mb-6">
+                  {aboutText.split("\n\n").filter(Boolean).map((para: string, i: number) => (
+                    <p key={i}>{para}</p>
+                  ))}
+                </div>
 
                 {/* Traits */}
                 <div className="space-y-3 mb-10">

@@ -7,8 +7,12 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Paramètres — Admin" };
 
 export default async function AdminSettingsPage() {
-  const doc = await adminDb.collection("config").doc("settings").get();
-  const settings = (doc.data() || {}) as Record<string, string>;
+  const [settingsDoc, adminDoc] = await Promise.all([
+    adminDb.collection("config").doc("settings").get(),
+    adminDb.collection("config").doc("admin").get(),
+  ]);
+  const settings = (settingsDoc.data() || {}) as Record<string, string>;
+  const passwordChanged = !!(adminDoc.data() as any)?.password_changed;
 
   return (
     <div className="max-w-2xl">
@@ -18,7 +22,7 @@ export default async function AdminSettingsPage() {
           Informations du site et sécurité.
         </p>
       </div>
-      <AdminSettingsClient initialSettings={settings} />
+      <AdminSettingsClient initialSettings={settings} passwordChanged={passwordChanged} />
     </div>
   );
 }

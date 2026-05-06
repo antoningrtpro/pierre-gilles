@@ -6,10 +6,12 @@ import ImageUpload from "./ImageUpload";
 
 interface AdminSettingsClientProps {
   initialSettings: Record<string, string>;
+  passwordChanged: boolean;
 }
 
 export default function AdminSettingsClient({
   initialSettings,
+  passwordChanged,
 }: AdminSettingsClientProps) {
   /* ── Hero image ─────────────────────────────────────────── */
   const [heroImage, setHeroImage] = useState(
@@ -424,15 +426,16 @@ export default function AdminSettingsClient({
       </div>
 
       {/* ── Zone de danger ───────────────────────────────────── */}
-      <div className="bg-white border border-red-100 rounded-lg p-6">
-        <h2 className="text-sm font-semibold text-red-600 mb-2">Zone de danger</h2>
-        <p className="text-xs text-ink/50">
-          Identifiants par défaut :{" "}
-          <code className="bg-ink/5 px-1 py-0.5 rounded">admin</code> /{" "}
-          <code className="bg-ink/5 px-1 py-0.5 rounded">changeme123</code>.{" "}
-          Changez le mot de passe ci-dessus dès que possible.
-        </p>
-      </div>
+      {!passwordChanged && (
+        <div className="bg-white border border-red-200 rounded-lg p-6">
+          <h2 className="text-sm font-semibold text-red-600 mb-2">⚠️ Zone de danger</h2>
+          <p className="text-xs text-ink/50">
+            Vous utilisez encore le mot de passe par défaut :{" "}
+            <code className="bg-ink/5 px-1 py-0.5 rounded">changeme123</code>.{" "}
+            Changez-le ci-dessus dès que possible.
+          </p>
+        </div>
+      )}
 
     </div>
   );
