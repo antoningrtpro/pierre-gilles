@@ -71,12 +71,12 @@ export default async function HomePage() {
             {tagline}
           </p>
           <div className="mt-10 flex items-center justify-center gap-6">
-            <Link
-              href="/gallery"
+            <a
+              href="#oeuvres"
               className="px-8 py-3 border border-cream/60 text-cream text-xs tracking-widest uppercase hover:bg-cream hover:text-ink transition-all duration-300"
             >
               Découvrir
-            </Link>
+            </a>
             <Link
               href="/contact"
               className="text-cream/60 text-xs tracking-widest uppercase hover:text-cream transition-colors"
@@ -94,7 +94,7 @@ export default async function HomePage() {
 
       {/* ── Featured works ──────────────────────────────── */}
       {featuredPhotos.length > 0 && (
-        <section className="max-w-7xl mx-auto px-6 md:px-12 py-24 md:py-32">
+        <section id="oeuvres" className="max-w-7xl mx-auto px-6 md:px-12 py-24 md:py-32">
           <RevealOnScroll>
             <div className="mb-14 flex items-end justify-between">
               <div>

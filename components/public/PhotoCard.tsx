@@ -16,12 +16,12 @@ export default function PhotoCard({
   return (
     <RevealOnScroll delay={index * 80}>
       <Link href={`/photo/${photo.slug}`} className="group block">
-        <div className="relative aspect-[4/3] overflow-hidden bg-ink/5 rounded-sm">
+        <div className="relative aspect-[4/3] overflow-hidden bg-[#F0EDE8] rounded-sm flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl(photo.filename)}
             alt={photo.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+            className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-ink/0 group-hover:bg-ink/10 transition-colors duration-500" />
         </div>
