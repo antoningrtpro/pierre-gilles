@@ -1,6 +1,7 @@
 import Image from "next/image";
-import { getDb, Category } from "@/lib/db";
-import { imageUrl } from "@/lib/utils";
+import { adminDb } from "@/lib/firebase-admin";
+import { Category } from "@/lib/db";
+import { imageUrl, serializeDoc } from "@/lib/utils";
 import AdminCategoryActions from "@/components/admin/AdminCategoryActions";
 import AdminCategoryForm from "@/components/admin/AdminCategoryForm";
 import type { Metadata } from "next";
@@ -9,17 +10,21 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Galeries — Admin" };
 
-export default function AdminCategoriesPage() {
-  const db = getDb();
-  const categories = db
-    .prepare(
-      `SELECT c.*, COUNT(p.id) as photo_count
-       FROM categories c
-       LEFT JOIN photos p ON p.category_id = c.id
-       GROUP BY c.id
-       ORDER BY c.position ASC`
-    )
-    .all() as Category[];
+export default async function AdminCategoriesPage() {
+  const [catsSnap, photosSnap] = await Promise.all([
+    adminDb.collection("categories").orderBy("position", "asc").get(),
+    adminDb.collection("photos").get(),
+  ]);
+
+  const photoCounts: Record<string, number> = {};
+  photosSnap.docs.forEach((doc) => {
+    const cid = doc.data().category_id;
+    if (cid) photoCounts[cid] = (photoCounts[cid] || 0) + 1;
+  });
+
+  const categories = catsSnap.docs.map((doc) =>
+    serializeDoc({ id: doc.id, ...doc.data(), photo_count: photoCounts[doc.id] || 0 })
+  ) as Category[];
 
   return (
     <div className="max-w-4xl">
@@ -46,7 +51,6 @@ export default function AdminCategoriesPage() {
                     i < categories.length - 1 ? "border-b border-ink/6" : ""
                   } hover:bg-ink/1 transition-colors`}
                 >
-                  {/* Cover */}
                   <div className="relative w-14 h-10 rounded overflow-hidden bg-ink/5 shrink-0">
                     {cat.cover_image ? (
                       <Image
@@ -61,8 +65,6 @@ export default function AdminCategoriesPage() {
                       <div className="w-full h-full bg-ink/10" />
                     )}
                   </div>
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-ink">{cat.name}</p>
                     <p className="text-xs text-ink/40 font-mono">{cat.slug}</p>

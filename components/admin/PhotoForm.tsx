@@ -6,28 +6,27 @@ import MultiImageUpload from "./MultiImageUpload";
 import { slugify } from "@/lib/utils";
 
 interface Format {
-  id?: number;
   label: string;
   price: string;
 }
 
 interface Category {
-  id: number;
+  id: string;
   name: string;
 }
 
 interface PhotoFormProps {
-  photoId?: number;
+  photoId?: string;
   initialData?: {
     title: string;
     slug: string;
     description: string;
-    category_id: number | null;
+    category_id: string | null;
     filename: string;
     extraImages: string[];
     featured: boolean;
     position: number;
-    formats: { id?: number; label: string; price: number }[];
+    formats: { label: string; price: number }[];
   };
   categories: Category[];
 }
@@ -64,7 +63,6 @@ export default function PhotoForm({
 
   const [formats, setFormats] = useState<Format[]>(
     initialData?.formats.map((f) => ({
-      id: f.id,
       label: f.label,
       price: f.price.toString(),
     })) || DEFAULT_FORMATS
@@ -105,7 +103,7 @@ export default function PhotoForm({
       title: form.title.trim(),
       slug: form.slug.trim() || slugify(form.title),
       description: form.description.trim(),
-      category_id: form.category_id ? Number(form.category_id) : null,
+      category_id: form.category_id || null,
       filename: images[0],
       extra_images: images.slice(1),
       featured: form.featured,
@@ -113,7 +111,6 @@ export default function PhotoForm({
       formats: formats
         .filter((f) => f.label.trim() && f.price)
         .map((f) => ({
-          id: f.id,
           label: f.label.trim(),
           price: Number(f.price),
         })),

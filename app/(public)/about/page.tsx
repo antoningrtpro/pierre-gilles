@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getDb } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
 import { imageUrl } from "@/lib/utils";
 import RevealOnScroll from "@/components/public/RevealOnScroll";
 import type { Metadata } from "next";
@@ -12,13 +12,9 @@ export const metadata: Metadata = {
   description: "Photographe naturaliste basé en France.",
 };
 
-export default function AboutPage() {
-  const db = getDb();
-  const rows = db.prepare("SELECT key, value FROM settings").all() as {
-    key: string;
-    value: string;
-  }[];
-  const settings = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+export default async function AboutPage() {
+  const settingsDoc = await adminDb.collection("config").doc("settings").get();
+  const settings = (settingsDoc.data() || {}) as Record<string, string>;
 
   const aboutText =
     settings.about_text ||

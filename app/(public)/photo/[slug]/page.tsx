@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getDb, Photo, Format, PhotoImage } from "@/lib/db";
-import { imageUrl, formatPrice } from "@/lib/utils";
+import { adminDb } from "@/lib/firebase-admin";
+import { Photo } from "@/lib/db";
+import { imageUrl, formatPrice, serializeDoc } from "@/lib/utils";
 import ContactForm from "@/components/public/ContactForm";
 import PhotoCard from "@/components/public/PhotoCard";
 import PhotoGallery from "@/components/public/PhotoGallery";
@@ -17,11 +18,9 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const db = getDb();
-  const photo = db
-    .prepare("SELECT * FROM photos WHERE slug = ?")
-    .get(slug) as Photo | undefined;
-  if (!photo) return { title: "Photo introuvable" };
+  const photoSnap = await adminDb.collection("photos").where("slug", "==", slug).limit(1).get();
+  if (photoSnap.empty) return { title: "Photo introuvable" };
+  const photo = photoSnap.docs[0].data() as Photo;
   return {
     title: photo.title,
     description:
@@ -32,58 +31,37 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PhotoPage({ params }: Props) {
   const { slug } = await params;
-  const db = getDb();
 
-  const photo = db
-    .prepare(
-      `SELECT p.*, c.name as category_name, c.slug as category_slug
-       FROM photos p
-       LEFT JOIN categories c ON p.category_id = c.id
-       WHERE p.slug = ?`
-    )
-    .get(slug) as
-    | (Photo & { category_name?: string; category_slug?: string })
-    | undefined;
+  const photoSnap = await adminDb.collection("photos").where("slug", "==", slug).limit(1).get();
+  if (photoSnap.empty) notFound();
 
-  if (!photo) notFound();
+  const photo = serializeDoc({ id: photoSnap.docs[0].id, ...photoSnap.docs[0].data() }) as Photo;
 
-  const formats = db
-    .prepare("SELECT * FROM formats WHERE photo_id = ? ORDER BY price ASC")
-    .all(photo.id) as Format[];
+  const formats: { label: string; price: number }[] = Array.isArray(photo.formats) ? photo.formats : [];
+  const extraImages: string[] = Array.isArray(photo.extra_images) ? photo.extra_images : [];
+  const allImages = [photo.filename, ...extraImages].filter(Boolean);
 
-  const extraImages = db
-    .prepare("SELECT * FROM photo_images WHERE photo_id = ? ORDER BY position ASC")
-    .all(photo.id) as PhotoImage[];
+  // Related photos from same category
+  let related: Photo[] = [];
+  if (photo.category_id) {
+    const relatedSnap = await adminDb.collection("photos")
+      .where("category_id", "==", photo.category_id)
+      .orderBy("position", "asc")
+      .limit(7)
+      .get();
+    related = relatedSnap.docs
+      .filter(doc => doc.id !== photo.id)
+      .slice(0, 6)
+      .map(doc => serializeDoc({ id: doc.id, ...doc.data() })) as Photo[];
+  }
 
-  const allImages = [photo.filename, ...extraImages.map((i) => i.filename)];
+  const settingsDoc = await adminDb.collection("config").doc("settings").get();
+  const s = settingsDoc.data() || {};
+  const aboutText = (s as any).about_text || "";
+  const instagramUrl = (s as any).instagram_url || "https://instagram.com/pierreg_photography";
+  const portraitImageSrc = (s as any).portrait_image || "https://picsum.photos/seed/portrait/600/800";
 
-  const related = photo.category_id
-    ? (db
-        .prepare(
-          `SELECT p.*, c.name as category_name, c.slug as category_slug,
-            MIN(f.price) as min_price
-           FROM photos p
-           LEFT JOIN categories c ON p.category_id = c.id
-           LEFT JOIN formats f ON f.photo_id = p.id
-           WHERE p.category_id = ? AND p.id != ?
-           GROUP BY p.id
-           ORDER BY p.position ASC
-           LIMIT 6`
-        )
-        .all(photo.category_id, photo.id) as Photo[])
-    : [];
-
-  const settings = db.prepare("SELECT key, value FROM settings").all() as {
-    key: string;
-    value: string;
-  }[];
-  const s = Object.fromEntries(settings.map((r) => [r.key, r.value]));
-  const aboutText = s.about_text || "";
-  const aboutTeaser = aboutText.split("\n\n")[0] || aboutText;
-  const instagramUrl = s.instagram_url || "https://instagram.com/pierreg_photography";
-  const portraitImageSrc = s.portrait_image || "https://picsum.photos/seed/portrait/600/800";
-  const minPrice =
-    formats.length > 0 ? Math.min(...formats.map((f) => f.price)) : null;
+  const minPrice = formats.length > 0 ? Math.min(...formats.map((f) => f.price)) : null;
 
   return (
     <>
@@ -162,9 +140,9 @@ export default async function PhotoPage({ params }: Props) {
                     Formats disponibles
                   </p>
                   <div className="border border-ink/10 divide-y divide-ink/8">
-                    {formats.map((fmt) => (
+                    {formats.map((fmt, i) => (
                       <div
-                        key={fmt.id}
+                        key={i}
                         className="flex items-center justify-between px-4 py-3 hover:bg-ink/2 transition-colors"
                       >
                         <span className="text-sm text-ink">{fmt.label}</span>
@@ -239,7 +217,7 @@ export default async function PhotoPage({ params }: Props) {
                 </h2>
 
                 <div className="space-y-4 text-ink/70 text-sm leading-relaxed mb-8">
-                  {aboutText.split("\n\n").filter(Boolean).map((para, i) => (
+                  {aboutText.split("\n\n").filter(Boolean).map((para: string, i: number) => (
                     <p key={i}>{para}</p>
                   ))}
                 </div>

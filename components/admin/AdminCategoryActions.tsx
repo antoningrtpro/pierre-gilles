@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function AdminCategoryActions({ categoryId }: { categoryId: number }) {
+export default function AdminCategoryActions({ categoryId }: { categoryId: string }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);

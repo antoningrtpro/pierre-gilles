@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
 import AdminSettingsClient from "@/components/admin/AdminSettingsClient";
 import type { Metadata } from "next";
 
@@ -6,13 +6,9 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Paramètres — Admin" };
 
-export default function AdminSettingsPage() {
-  const db = getDb();
-  const rows = db.prepare("SELECT key, value FROM settings").all() as {
-    key: string;
-    value: string;
-  }[];
-  const settings = Object.fromEntries(rows.map((r) => [r.key, r.value]));
+export default async function AdminSettingsPage() {
+  const doc = await adminDb.collection("config").doc("settings").get();
+  const settings = (doc.data() || {}) as Record<string, string>;
 
   return (
     <div className="max-w-2xl">

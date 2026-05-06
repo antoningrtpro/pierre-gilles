@@ -1,89 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, Photo } from "@/lib/db";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/adminAuth";
 import { slugify } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin(req);
   if (error) return error;
-
-  const db = getDb();
-  const photos = db
-    .prepare(
-      `SELECT p.*, c.name as category_name
-       FROM photos p
-       LEFT JOIN categories c ON p.category_id = c.id
-       ORDER BY p.position ASC, p.created_at DESC`
-    )
-    .all() as Photo[];
-
+  const snapshot = await adminDb.collection("photos").orderBy("position", "asc").get();
+  const photos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   return NextResponse.json(photos);
 }
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin(req);
   if (error) return error;
-
   try {
     const body = await req.json();
-    const { title, slug, description, category_id, filename, extra_images, featured, position, formats } =
-      body;
+    const { title, slug, description, category_id, filename, extra_images, featured, position, formats } = body;
 
     if (!title?.trim() || !filename?.trim()) {
-      return NextResponse.json(
-        { error: "Titre et fichier requis." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Titre et fichier requis." }, { status: 400 });
     }
 
-    const db = getDb();
     const finalSlug = slug?.trim() || slugify(title);
 
-    const result = db
-      .prepare(
-        `INSERT INTO photos (title, slug, description, category_id, filename, featured, position)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
-        title.trim(),
-        finalSlug,
-        description?.trim() || null,
-        category_id || null,
-        filename.trim(),
-        featured ? 1 : 0,
-        position ?? 0
-      );
-
-    const photoId = result.lastInsertRowid;
-
-    // Save extra images
-    if (Array.isArray(extra_images) && extra_images.length > 0) {
-      const insertImg = db.prepare(
-        "INSERT INTO photo_images (photo_id, filename, position) VALUES (?, ?, ?)"
-      );
-      extra_images.forEach((f: string, i: number) => insertImg.run(photoId, f, i));
+    // Check slug uniqueness
+    const existing = await adminDb.collection("photos").where("slug", "==", finalSlug).limit(1).get();
+    if (!existing.empty) {
+      return NextResponse.json({ error: "Ce slug est déjà utilisé." }, { status: 409 });
     }
 
-    // Save formats
-    if (Array.isArray(formats) && formats.length > 0) {
-      const insertFmt = db.prepare(
-        "INSERT INTO formats (photo_id, label, price) VALUES (?, ?, ?)"
-      );
-      for (const fmt of formats) {
-        if (fmt.label && fmt.price !== undefined) {
-          insertFmt.run(photoId, fmt.label.trim(), Number(fmt.price));
-        }
+    // Get category info for denormalization
+    let category_name = null;
+    let category_slug = null;
+    if (category_id) {
+      const catDoc = await adminDb.collection("categories").doc(category_id).get();
+      if (catDoc.exists) {
+        const cat = catDoc.data()!;
+        category_name = cat.name;
+        category_slug = cat.slug;
       }
     }
 
-    return NextResponse.json({ id: photoId }, { status: 201 });
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message.includes("UNIQUE")) {
-      return NextResponse.json(
-        { error: "Ce slug est déjà utilisé." },
-        { status: 409 }
-      );
-    }
+    const embeddedFormats = (Array.isArray(formats) ? formats : [])
+      .filter((f: any) => f.label && f.price !== undefined)
+      .map((f: any) => ({ label: f.label.trim(), price: Number(f.price) }));
+
+    const min_price = embeddedFormats.length > 0
+      ? Math.min(...embeddedFormats.map((f: any) => f.price))
+      : null;
+
+    const ref = await adminDb.collection("photos").add({
+      title: title.trim(),
+      slug: finalSlug,
+      description: description?.trim() || null,
+      category_id: category_id || null,
+      category_name,
+      category_slug,
+      filename: filename.trim(),
+      extra_images: Array.isArray(extra_images) ? extra_images : [],
+      formats: embeddedFormats,
+      featured: !!featured,
+      position: position ?? 0,
+      min_price,
+      created_at: FieldValue.serverTimestamp(),
+    });
+
+    return NextResponse.json({ id: ref.id }, { status: 201 });
+  } catch (err) {
     console.error("Create photo error:", err);
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }

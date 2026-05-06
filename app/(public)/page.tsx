@@ -1,70 +1,48 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getDb, Photo, Category } from "@/lib/db";
-import { imageUrl } from "@/lib/utils";
+import { adminDb } from "@/lib/firebase-admin";
+import { Photo, Category } from "@/lib/db";
+import { imageUrl, serializeDoc } from "@/lib/utils";
 import PhotoCard from "@/components/public/PhotoCard";
 import RevealOnScroll from "@/components/public/RevealOnScroll";
 import ContactForm from "@/components/public/ContactForm";
 
 export const dynamic = "force-dynamic";
 
-function getHomeData() {
-  const db = getDb();
+export default async function HomePage() {
+  // Fetch all data from Firestore
+  const [featuredSnap, allPhotosSnap, catsSnap, settingsDoc] = await Promise.all([
+    adminDb.collection("photos").where("featured", "==", true).orderBy("position", "asc").limit(6).get(),
+    adminDb.collection("photos").orderBy("position", "asc").get(),
+    adminDb.collection("categories").orderBy("position", "asc").get(),
+    adminDb.collection("config").doc("settings").get(),
+  ]);
 
-  const featuredPhotos = db
-    .prepare(
-      `SELECT p.*, c.name as category_name, c.slug as category_slug,
-        MIN(f.price) as min_price
-       FROM photos p
-       LEFT JOIN categories c ON p.category_id = c.id
-       LEFT JOIN formats f ON f.photo_id = p.id
-       WHERE p.featured = 1
-       GROUP BY p.id
-       ORDER BY p.position ASC
-       LIMIT 6`
-    )
-    .all() as Photo[];
+  const featuredPhotos = featuredSnap.docs.map(doc => serializeDoc({ id: doc.id, ...doc.data() })) as Photo[];
+  const allPhotos = allPhotosSnap.docs.map(doc => ({ id: doc.id, title: (doc.data() as any).title, slug: (doc.data() as any).slug }));
 
-  const allPhotos = db
-    .prepare("SELECT id, title, slug FROM photos ORDER BY position ASC, created_at DESC")
-    .all() as { id: number; title: string; slug: string }[];
+  // Compute photo_count for categories
+  const photoCounts: Record<string, number> = {};
+  allPhotosSnap.docs.forEach(doc => {
+    const cid = (doc.data() as any).category_id;
+    if (cid) photoCounts[cid] = (photoCounts[cid] || 0) + 1;
+  });
 
-  const categories = db
-    .prepare(
-      `SELECT c.*, COUNT(p.id) as photo_count
-       FROM categories c
-       LEFT JOIN photos p ON p.category_id = c.id
-       GROUP BY c.id
-       ORDER BY c.position ASC`
-    )
-    .all() as Category[];
+  const categories = catsSnap.docs.map(doc => serializeDoc({
+    id: doc.id,
+    ...doc.data(),
+    photo_count: photoCounts[doc.id] || 0,
+  })) as Category[];
 
-  const heroPhoto = db
-    .prepare("SELECT * FROM photos WHERE featured = 1 ORDER BY position ASC LIMIT 1")
-    .get() as Photo | undefined;
+  const s = settingsDoc.data() || {};
 
-  const settings = db.prepare("SELECT key, value FROM settings").all() as {
-    key: string;
-    value: string;
-  }[];
-  const s = Object.fromEntries(settings.map((r) => [r.key, r.value]));
-
-  // hero_image setting overrides the featured photo
-  const heroImageSrc: string =
-    s.hero_image ||
-    (heroPhoto ? heroPhoto.filename : "");
-
-  return { featuredPhotos, allPhotos, categories, heroPhoto, heroImageSrc, settings: s };
-}
-
-export default function HomePage() {
-  const { featuredPhotos, allPhotos, categories, heroPhoto, heroImageSrc, settings } = getHomeData();
-
-  const tagline = settings.tagline || "Le monde vivant, saisi dans l'instant";
-  const aboutText = settings.about_text || "";
-  const instagramUrl = settings.instagram_url || "https://instagram.com/pierreg_photography";
-  const portraitImageSrc = settings.portrait_image || "https://picsum.photos/seed/portrait/600/800";
-  const heroPosition = settings.hero_position || "center";
+  const heroTitle = (s as any).hero_title || "Pierre G.";
+  const tagline = (s as any).tagline || "Le monde vivant, saisi dans l'instant";
+  const aboutText = (s as any).about_text || "";
+  const instagramUrl = (s as any).instagram_url || "https://instagram.com/pierreg_photography";
+  const portraitImageSrc = (s as any).portrait_image || "https://picsum.photos/seed/portrait/600/800";
+  const heroPosition = (s as any).hero_position || "center";
+  const heroImageSrc: string = (s as any).hero_image || (featuredPhotos[0]?.filename ?? "");
 
   // First paragraph only for homepage teaser
   const aboutTeaser = aboutText.split("\n\n")[0] || aboutText;
@@ -76,7 +54,7 @@ export default function HomePage() {
         {heroImageSrc ? (
           <Image
             src={imageUrl(heroImageSrc)}
-            alt={heroPhoto?.title ?? "Photo d'accueil"}
+            alt={featuredPhotos[0]?.title ?? "Photo d'accueil"}
             fill
             priority
             className={`object-cover object-${heroPosition}`}
@@ -89,7 +67,7 @@ export default function HomePage() {
 
         <div className="relative z-10 text-center px-6">
           <h1 className="font-serif text-display-xl text-cream tracking-tight text-balance">
-            Pierre G.
+            {heroTitle}
           </h1>
           <p className="mt-4 text-cream/70 font-sans text-sm md:text-base tracking-[0.2em] uppercase max-w-xs mx-auto">
             {tagline}

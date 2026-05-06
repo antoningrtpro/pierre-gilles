@@ -1,43 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { getDb, AdminUser } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
 import { createSession, COOKIE_NAME } from "@/lib/auth";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();
-
     if (!username || !password) {
-      return NextResponse.json(
-        { error: "Identifiant et mot de passe requis." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Identifiants requis." }, { status: 400 });
     }
 
-    const db = getDb();
-    const admin = db
-      .prepare("SELECT * FROM admin WHERE username = ?")
-      .get(username) as AdminUser | undefined;
+    const adminDoc = await adminDb.collection("config").doc("admin").get();
+    if (!adminDoc.exists) {
+      return NextResponse.json({ error: "Admin non configuré." }, { status: 404 });
+    }
 
-    if (!admin) {
-      return NextResponse.json(
-        { error: "Identifiants incorrects." },
-        { status: 401 }
-      );
+    const admin = adminDoc.data() as { username: string; password_hash: string };
+    if (admin.username !== username) {
+      return NextResponse.json({ error: "Identifiants incorrects." }, { status: 401 });
     }
 
     const valid = await bcrypt.compare(password, admin.password_hash);
     if (!valid) {
-      return NextResponse.json(
-        { error: "Identifiants incorrects." },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Identifiants incorrects." }, { status: 401 });
     }
 
-    const token = await createSession({
-      adminId: admin.id,
-      username: admin.username,
-    });
+    const token = await createSession({ adminId: 1, username: admin.username });
 
     const response = NextResponse.json({ ok: true });
     response.cookies.set(COOKIE_NAME, token, {

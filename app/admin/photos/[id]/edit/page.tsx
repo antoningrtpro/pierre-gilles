@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
-import { getDb, Category, Photo, Format, PhotoImage } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
+import { Category, Photo } from "@/lib/db";
+import { serializeDoc } from "@/lib/utils";
 import PhotoForm from "@/components/admin/PhotoForm";
 import type { Metadata } from "next";
 
@@ -11,34 +13,28 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const db = getDb();
-  const photo = db
-    .prepare("SELECT title FROM photos WHERE id = ?")
-    .get(Number(id)) as { title: string } | undefined;
-  return { title: photo ? `Modifier — ${photo.title}` : "Modifier — Admin" };
+  const doc = await adminDb.collection("photos").doc(id).get();
+  const title = doc.exists ? (doc.data() as Photo).title : undefined;
+  return { title: title ? `Modifier — ${title}` : "Modifier — Admin" };
 }
 
 export default async function EditPhotoPage({ params }: Props) {
   const { id } = await params;
-  const photoId = Number(id);
-  const db = getDb();
 
-  const photo = db
-    .prepare("SELECT * FROM photos WHERE id = ?")
-    .get(photoId) as Photo | undefined;
-  if (!photo) notFound();
+  const [photoDoc, catsSnap] = await Promise.all([
+    adminDb.collection("photos").doc(id).get(),
+    adminDb.collection("categories").orderBy("position", "asc").get(),
+  ]);
 
-  const formats = db
-    .prepare("SELECT * FROM formats WHERE photo_id = ? ORDER BY price ASC")
-    .all(photoId) as Format[];
+  if (!photoDoc.exists) notFound();
 
-  const extraImages = db
-    .prepare("SELECT * FROM photo_images WHERE photo_id = ? ORDER BY position ASC")
-    .all(photoId) as PhotoImage[];
+  const photo = serializeDoc({ id: photoDoc.id, ...photoDoc.data() }) as Photo;
+  const categories = catsSnap.docs.map((doc) =>
+    serializeDoc({ id: doc.id, ...doc.data() })
+  ) as Category[];
 
-  const categories = db
-    .prepare("SELECT id, name FROM categories ORDER BY position ASC")
-    .all() as Category[];
+  const formats = Array.isArray(photo.formats) ? photo.formats : [];
+  const extraImages = Array.isArray(photo.extra_images) ? photo.extra_images : [];
 
   return (
     <div className="max-w-5xl">
@@ -48,19 +44,18 @@ export default async function EditPhotoPage({ params }: Props) {
         </h1>
       </div>
       <PhotoForm
-        photoId={photoId}
+        photoId={photo.id}
         categories={categories}
         initialData={{
           title: photo.title,
           slug: photo.slug,
           description: photo.description || "",
-          category_id: photo.category_id,
+          category_id: photo.category_id || null,
           filename: photo.filename,
-          extraImages: extraImages.map((i) => i.filename),
+          extraImages: extraImages,
           featured: !!photo.featured,
           position: photo.position,
           formats: formats.map((f) => ({
-            id: f.id,
             label: f.label,
             price: f.price,
           })),

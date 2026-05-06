@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getDb, Category } from "@/lib/db";
-import { imageUrl } from "@/lib/utils";
+import { adminDb } from "@/lib/firebase-admin";
+import { Category } from "@/lib/db";
+import { imageUrl, serializeDoc } from "@/lib/utils";
 import RevealOnScroll from "@/components/public/RevealOnScroll";
 import type { Metadata } from "next";
 
@@ -12,17 +13,23 @@ export const metadata: Metadata = {
   description: "Toutes les collections photographiques de Pierre G.",
 };
 
-export default function GalleriesPage() {
-  const db = getDb();
-  const categories = db
-    .prepare(
-      `SELECT c.*, COUNT(p.id) as photo_count
-       FROM categories c
-       LEFT JOIN photos p ON p.category_id = c.id
-       GROUP BY c.id
-       ORDER BY c.position ASC`
-    )
-    .all() as Category[];
+export default async function GalleriesPage() {
+  const [catsSnap, photosSnap] = await Promise.all([
+    adminDb.collection("categories").orderBy("position", "asc").get(),
+    adminDb.collection("photos").get(),
+  ]);
+
+  const counts: Record<string, number> = {};
+  photosSnap.docs.forEach(doc => {
+    const cid = (doc.data() as any).category_id;
+    if (cid) counts[cid] = (counts[cid] || 0) + 1;
+  });
+
+  const categories = catsSnap.docs.map(doc => serializeDoc({
+    id: doc.id,
+    ...doc.data(),
+    photo_count: counts[doc.id] || 0,
+  })) as Category[];
 
   return (
     <div className="pt-24 md:pt-32">

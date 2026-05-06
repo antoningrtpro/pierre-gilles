@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 
 interface ContactFormProps {
   photoTitle?: string;
-  formats?: { id: number; label: string; price: number }[];
+  formats?: { label: string; price: number }[];
   defaultSubject?: string;
-  photos?: { id: number; title: string; slug: string }[];
+  photos?: { id: string; title: string; slug: string }[];
 }
 
 export default function ContactForm({
@@ -26,8 +26,11 @@ export default function ContactForm({
     message: "",
   });
 
-  // Random stock 1–5, stable for the session
-  const [stock] = useState(() => Math.floor(Math.random() * 5) + 1);
+  // Random stock 1–5, défini côté client uniquement pour éviter le mismatch hydration
+  const [stock, setStock] = useState<number | null>(null);
+  useEffect(() => {
+    setStock(Math.floor(Math.random() * 5) + 1);
+  }, []);
 
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
   const [error, setError] = useState("");
@@ -164,7 +167,7 @@ export default function ContactForm({
           >
             <option value="">— Choisir un format —</option>
             {formats.map((f) => (
-              <option key={f.id} value={f.label}>
+              <option key={f.label} value={f.label}>
                 {f.label} — {f.price} €
               </option>
             ))}
@@ -207,7 +210,7 @@ export default function ContactForm({
             : "Envoyer le message"}
         </button>
 
-        {isProduct && (
+        {isProduct && stock !== null && (
           <p className="text-xs text-red-600/80 font-medium">
             Plus que <span className="font-bold">{stock}</span> exemplaire{stock > 1 ? "s" : ""} disponible{stock > 1 ? "s" : ""}
           </p>

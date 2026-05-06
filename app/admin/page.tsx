@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDb } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
 import { getSession } from "@/lib/auth";
 import type { Metadata } from "next";
 
@@ -9,66 +9,62 @@ export const metadata: Metadata = {
   title: "Administration — Pierre G.",
 };
 
-interface Stats {
-  photos: number;
-  categories: number;
-  unread: number;
-  total_contacts: number;
-}
-
 interface RecentContact {
-  id: number;
+  id: string;
   name: string;
   email: string;
   subject: string;
   message: string;
-  read: number;
-  created_at: string;
+  read: boolean;
+  created_at: any;
   photo_title: string | null;
 }
 
 export default async function AdminDashboard() {
   const session = await getSession();
-  const db = getDb();
 
-  const stats = db
-    .prepare(
-      `SELECT
-        (SELECT COUNT(*) FROM photos) as photos,
-        (SELECT COUNT(*) FROM categories) as categories,
-        (SELECT COUNT(*) FROM contact_requests WHERE read = 0) as unread,
-        (SELECT COUNT(*) FROM contact_requests) as total_contacts`
-    )
-    .get() as Stats;
+  const [photoCountSnap, catCountSnap, unreadCountSnap, recentSnap] = await Promise.all([
+    adminDb.collection("photos").count().get(),
+    adminDb.collection("categories").count().get(),
+    adminDb.collection("contact_requests").where("read", "==", false).count().get(),
+    adminDb.collection("contact_requests").orderBy("created_at", "desc").limit(5).get(),
+  ]);
 
-  const recentContacts = db
-    .prepare(
-      "SELECT * FROM contact_requests ORDER BY created_at DESC LIMIT 5"
-    )
-    .all() as RecentContact[];
+  const photoCount = photoCountSnap.data().count;
+  const catCount = catCountSnap.data().count;
+  const unreadCount = unreadCountSnap.data().count;
+
+  const totalContactsSnap = await adminDb.collection("contact_requests").count().get();
+  const totalContacts = totalContactsSnap.data().count;
+
+  const recentContacts = recentSnap.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    created_at: doc.data().created_at?.toDate?.()?.toISOString() ?? null,
+  })) as RecentContact[];
 
   const statCards = [
     {
       label: "Photos",
-      value: stats.photos,
+      value: photoCount,
       href: "/admin/photos",
       color: "bg-moss/10 text-moss",
     },
     {
       label: "Galeries",
-      value: stats.categories,
+      value: catCount,
       href: "/admin/categories",
       color: "bg-ink/5 text-ink",
     },
     {
       label: "Messages non lus",
-      value: stats.unread,
+      value: unreadCount,
       href: "/admin/contacts",
-      color: stats.unread > 0 ? "bg-amber-50 text-amber-700" : "bg-ink/5 text-ink",
+      color: unreadCount > 0 ? "bg-amber-50 text-amber-700" : "bg-ink/5 text-ink",
     },
     {
       label: "Messages total",
-      value: stats.total_contacts,
+      value: totalContacts,
       href: "/admin/contacts",
       color: "bg-ink/5 text-ink",
     },
@@ -182,10 +178,9 @@ export default async function AdminDashboard() {
                   <p className="text-xs text-ink/50 truncate">{c.message}</p>
                 </div>
                 <span className="text-xs text-ink/30 shrink-0">
-                  {new Date(c.created_at).toLocaleDateString("fr-FR", {
-                    day: "numeric",
-                    month: "short",
-                  })}
+                  {c.created_at?.toDate
+                    ? c.created_at.toDate().toLocaleDateString("fr-FR", { day: "numeric", month: "short" })
+                    : "—"}
                 </span>
               </Link>
             ))}

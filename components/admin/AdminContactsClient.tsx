@@ -21,7 +21,7 @@ export default function AdminContactsClient({
   const [contacts, setContacts] = useState<ContactRequest[]>(initialContacts);
   const [filter, setFilter] = useState("all");
   const [selected, setSelected] = useState<ContactRequest | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const filtered = contacts.filter((c) => {
     if (filter === "all") return true;
@@ -29,21 +29,21 @@ export default function AdminContactsClient({
     return c.subject === filter;
   });
 
-  const markRead = async (id: number, read: boolean) => {
+  const markRead = async (id: string, read: boolean) => {
     await fetch(`/api/admin/contacts/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ read }),
     });
     setContacts((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, read: read ? 1 : 0 } : c))
+      prev.map((c) => (c.id === id ? { ...c, read } : c))
     );
     if (selected?.id === id) {
-      setSelected((prev) => (prev ? { ...prev, read: read ? 1 : 0 } : prev));
+      setSelected((prev) => (prev ? { ...prev, read } : prev));
     }
   };
 
-  const deleteContact = async (id: number) => {
+  const deleteContact = async (id: string) => {
     await fetch(`/api/admin/contacts/${id}`, { method: "DELETE" });
     setContacts((prev) => prev.filter((c) => c.id !== id));
     if (selected?.id === id) setSelected(null);

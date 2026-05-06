@@ -1,59 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, Category } from "@/lib/db";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/adminAuth";
 import { slugify } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin(req);
   if (error) return error;
-
-  const db = getDb();
-  const categories = db
-    .prepare(
-      `SELECT c.*, COUNT(p.id) as photo_count
-       FROM categories c
-       LEFT JOIN photos p ON p.category_id = c.id
-       GROUP BY c.id
-       ORDER BY c.position ASC, c.created_at DESC`
-    )
-    .all() as Category[];
-
+  const snapshot = await adminDb.collection("categories").orderBy("position", "asc").get();
+  // Get photo counts
+  const photosSnap = await adminDb.collection("photos").get();
+  const counts: Record<string, number> = {};
+  photosSnap.docs.forEach(doc => {
+    const cid = doc.data().category_id;
+    if (cid) counts[cid] = (counts[cid] || 0) + 1;
+  });
+  const categories = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    photo_count: counts[doc.id] || 0,
+  }));
   return NextResponse.json(categories);
 }
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin(req);
   if (error) return error;
-
   try {
     const body = await req.json();
     const { name, slug, cover_image, position } = body;
-
-    if (!name?.trim()) {
-      return NextResponse.json(
-        { error: "Le nom est requis." },
-        { status: 400 }
-      );
-    }
-
-    const db = getDb();
+    if (!name?.trim()) return NextResponse.json({ error: "Le nom est requis." }, { status: 400 });
     const finalSlug = slug?.trim() || slugify(name);
-
-    const result = db
-      .prepare(
-        `INSERT INTO categories (name, slug, cover_image, position)
-         VALUES (?, ?, ?, ?)`
-      )
-      .run(name.trim(), finalSlug, cover_image?.trim() || null, position ?? 0);
-
-    return NextResponse.json({ id: result.lastInsertRowid }, { status: 201 });
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message.includes("UNIQUE")) {
-      return NextResponse.json(
-        { error: "Ce slug est déjà utilisé." },
-        { status: 409 }
-      );
-    }
+    const existing = await adminDb.collection("categories").where("slug", "==", finalSlug).limit(1).get();
+    if (!existing.empty) return NextResponse.json({ error: "Ce slug est déjà utilisé." }, { status: 409 });
+    const ref = await adminDb.collection("categories").add({
+      name: name.trim(),
+      slug: finalSlug,
+      cover_image: cover_image?.trim() || null,
+      position: position ?? 0,
+      created_at: FieldValue.serverTimestamp(),
+    });
+    return NextResponse.json({ id: ref.id }, { status: 201 });
+  } catch (err) {
     console.error("Create category error:", err);
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }

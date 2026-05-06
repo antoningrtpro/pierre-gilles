@@ -1,61 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, Category } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/adminAuth";
 import { slugify } from "@/lib/utils";
 
-interface Params {
-  params: Promise<{ id: string }>;
-}
+interface Params { params: Promise<{ id: string }> }
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const { error } = await requireAdmin(req);
   if (error) return error;
-
   const { id } = await params;
-  const catId = Number(id);
-
   try {
     const body = await req.json();
     const { name, slug, cover_image, position } = body;
-
-    if (!name?.trim()) {
-      return NextResponse.json(
-        { error: "Le nom est requis." },
-        { status: 400 }
-      );
-    }
-
-    const db = getDb();
-    const existing = db
-      .prepare("SELECT * FROM categories WHERE id = ?")
-      .get(catId) as Category | undefined;
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Catégorie introuvable." },
-        { status: 404 }
-      );
-    }
-
+    if (!name?.trim()) return NextResponse.json({ error: "Le nom est requis." }, { status: 400 });
     const finalSlug = slug?.trim() || slugify(name);
-
-    db.prepare(
-      "UPDATE categories SET name=?, slug=?, cover_image=?, position=? WHERE id=?"
-    ).run(
-      name.trim(),
-      finalSlug,
-      cover_image?.trim() || existing.cover_image,
-      position ?? existing.position,
-      catId
-    );
-
-    return NextResponse.json({ ok: true });
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message.includes("UNIQUE")) {
-      return NextResponse.json(
-        { error: "Ce slug est déjà utilisé." },
-        { status: 409 }
-      );
+    const docRef = adminDb.collection("categories").doc(id);
+    const existing = await docRef.get();
+    if (!existing.exists) return NextResponse.json({ error: "Galerie introuvable." }, { status: 404 });
+    const slugCheck = await adminDb.collection("categories").where("slug", "==", finalSlug).limit(1).get();
+    if (!slugCheck.empty && slugCheck.docs[0].id !== id) {
+      return NextResponse.json({ error: "Ce slug est déjà utilisé." }, { status: 409 });
     }
+    await docRef.update({
+      name: name.trim(),
+      slug: finalSlug,
+      cover_image: cover_image?.trim() || null,
+      position: position ?? existing.data()!.position,
+    });
+    // Update denormalized category info in photos
+    const photosSnap = await adminDb.collection("photos").where("category_id", "==", id).get();
+    const batch = adminDb.batch();
+    photosSnap.docs.forEach(doc => {
+      batch.update(doc.ref, { category_name: name.trim(), category_slug: finalSlug });
+    });
+    await batch.commit();
+    return NextResponse.json({ ok: true });
+  } catch (err) {
     console.error("Update category error:", err);
     return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
   }
@@ -64,26 +44,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
 export async function DELETE(req: NextRequest, { params }: Params) {
   const { error } = await requireAdmin(req);
   if (error) return error;
-
   const { id } = await params;
-  const catId = Number(id);
-  const db = getDb();
-
-  const existing = db
-    .prepare("SELECT * FROM categories WHERE id = ?")
-    .get(catId) as Category | undefined;
-  if (!existing) {
-    return NextResponse.json(
-      { error: "Catégorie introuvable." },
-      { status: 404 }
-    );
-  }
-
-  // Nullify category_id on photos referencing this category
-  db.prepare("UPDATE photos SET category_id = NULL WHERE category_id = ?").run(
-    catId
-  );
-  db.prepare("DELETE FROM categories WHERE id = ?").run(catId);
-
+  const doc = await adminDb.collection("categories").doc(id).get();
+  if (!doc.exists) return NextResponse.json({ error: "Galerie introuvable." }, { status: 404 });
+  // Unlink photos from this category
+  const photosSnap = await adminDb.collection("photos").where("category_id", "==", id).get();
+  const batch = adminDb.batch();
+  photosSnap.docs.forEach(doc => {
+    batch.update(doc.ref, { category_id: null, category_name: null, category_slug: null });
+  });
+  batch.delete(adminDb.collection("categories").doc(id));
+  await batch.commit();
   return NextResponse.json({ ok: true });
 }

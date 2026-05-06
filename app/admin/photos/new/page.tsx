@@ -1,4 +1,6 @@
-import { getDb, Category } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
+import { Category } from "@/lib/db";
+import { serializeDoc } from "@/lib/utils";
 import PhotoForm from "@/components/admin/PhotoForm";
 import type { Metadata } from "next";
 
@@ -6,11 +8,15 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Nouvelle photo — Admin" };
 
-export default function NewPhotoPage() {
-  const db = getDb();
-  const categories = db
-    .prepare("SELECT id, name FROM categories ORDER BY position ASC")
-    .all() as Category[];
+export default async function NewPhotoPage() {
+  const snapshot = await adminDb
+    .collection("categories")
+    .orderBy("position", "asc")
+    .get();
+
+  const categories = snapshot.docs.map((doc) =>
+    serializeDoc({ id: doc.id, ...doc.data() })
+  ) as Category[];
 
   return (
     <div className="max-w-5xl">

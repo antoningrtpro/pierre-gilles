@@ -23,3 +23,30 @@ export function imageUrl(filename: string): string {
   if (filename.startsWith("http")) return filename;
   return `/api/file/${filename}`;
 }
+
+/**
+ * Convertit un document Firestore en objet plain JSON sérialisable.
+ * Transforme les Timestamp en string ISO, supprime les valeurs undefined.
+ */
+export function serializeDoc<T extends Record<string, any>>(data: T): T {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (value === undefined) {
+      result[key] = null;
+    } else if (value && typeof value.toDate === "function") {
+      // Firestore Timestamp → string ISO
+      result[key] = value.toDate().toISOString();
+    } else if (Array.isArray(value)) {
+      result[key] = value.map((item) =>
+        item && typeof item === "object" && typeof item.toDate === "function"
+          ? item.toDate().toISOString()
+          : item && typeof item === "object" && !(item instanceof Date)
+          ? serializeDoc(item)
+          : item
+      );
+    } else {
+      result[key] = value;
+    }
+  }
+  return result as T;
+}

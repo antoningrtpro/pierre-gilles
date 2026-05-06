@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
-import { getDb, Photo, Category } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
+import { Photo, Category } from "@/lib/db";
+import { serializeDoc } from "@/lib/utils";
 import PhotoCard from "@/components/public/PhotoCard";
 import RevealOnScroll from "@/components/public/RevealOnScroll";
 import type { Metadata } from "next";
@@ -12,11 +14,9 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const db = getDb();
-  const cat = db
-    .prepare("SELECT * FROM categories WHERE slug = ?")
-    .get(slug) as Category | undefined;
-  if (!cat) return { title: "Galerie introuvable" };
+  const catSnap = await adminDb.collection("categories").where("slug", "==", slug).limit(1).get();
+  if (catSnap.empty) return { title: "Galerie introuvable" };
+  const cat = catSnap.docs[0].data() as Category;
   return {
     title: cat.name,
     description: `Découvrez la collection ${cat.name} de Pierre G.`,
@@ -25,25 +25,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function GalleryPage({ params }: Props) {
   const { slug } = await params;
-  const db = getDb();
 
-  const category = db
-    .prepare("SELECT * FROM categories WHERE slug = ?")
-    .get(slug) as Category | undefined;
-  if (!category) notFound();
+  const catSnap = await adminDb.collection("categories").where("slug", "==", slug).limit(1).get();
+  if (catSnap.empty) notFound();
 
-  const photos = db
-    .prepare(
-      `SELECT p.*, c.name as category_name, c.slug as category_slug,
-        MIN(f.price) as min_price
-       FROM photos p
-       LEFT JOIN categories c ON p.category_id = c.id
-       LEFT JOIN formats f ON f.photo_id = p.id
-       WHERE p.category_id = ?
-       GROUP BY p.id
-       ORDER BY p.position ASC`
-    )
-    .all(category.id) as Photo[];
+  const category = { id: catSnap.docs[0].id, ...catSnap.docs[0].data() } as Category;
+
+  const photosSnap = await adminDb.collection("photos")
+    .where("category_id", "==", category.id)
+    .orderBy("position", "asc")
+    .get();
+
+  const photos = photosSnap.docs.map(doc => serializeDoc({ id: doc.id, ...doc.data() })) as Photo[];
 
   return (
     <div className="pt-24 md:pt-32">

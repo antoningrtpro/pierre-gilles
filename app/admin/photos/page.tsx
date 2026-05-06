@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getDb, Photo } from "@/lib/db";
-import { imageUrl } from "@/lib/utils";
+import { adminDb } from "@/lib/firebase-admin";
+import { Photo } from "@/lib/db";
+import { imageUrl, serializeDoc } from "@/lib/utils";
 import AdminPhotoActions from "@/components/admin/AdminPhotoActions";
 import type { Metadata } from "next";
 
@@ -9,24 +10,24 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Photos — Admin" };
 
-export default function AdminPhotosPage() {
-  const db = getDb();
-  const photos = db
-    .prepare(
-      `SELECT p.*, c.name as category_name
-       FROM photos p
-       LEFT JOIN categories c ON p.category_id = c.id
-       ORDER BY p.position ASC, p.created_at DESC`
-    )
-    .all() as Photo[];
+export default async function AdminPhotosPage() {
+  const snapshot = await adminDb
+    .collection("photos")
+    .orderBy("position", "asc")
+    .get();
+
+  const photos = snapshot.docs.map((doc) =>
+    serializeDoc({ id: doc.id, ...doc.data() })
+  ) as Photo[];
 
   return (
     <div className="max-w-6xl">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-xl font-semibold text-ink">Photos</h1>
-          <p className="text-sm text-ink/50 mt-0.5">{photos.length} photo{photos.length !== 1 ? "s" : ""}</p>
+          <p className="text-sm text-ink/50 mt-0.5">
+            {photos.length} photo{photos.length !== 1 ? "s" : ""}
+          </p>
         </div>
         <Link
           href="/admin/photos/new"
@@ -51,24 +52,12 @@ export default function AdminPhotosPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink/8 bg-ink/2">
-                <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-ink/40 w-16">
-                  Image
-                </th>
-                <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-ink/40">
-                  Titre
-                </th>
-                <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-ink/40 hidden md:table-cell">
-                  Galerie
-                </th>
-                <th className="text-center px-4 py-3 text-xs tracking-widest uppercase text-ink/40 hidden sm:table-cell">
-                  À la une
-                </th>
-                <th className="text-center px-4 py-3 text-xs tracking-widest uppercase text-ink/40 hidden sm:table-cell">
-                  Pos.
-                </th>
-                <th className="text-right px-4 py-3 text-xs tracking-widest uppercase text-ink/40">
-                  Actions
-                </th>
+                <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-ink/40 w-16">Image</th>
+                <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-ink/40">Titre</th>
+                <th className="text-left px-4 py-3 text-xs tracking-widest uppercase text-ink/40 hidden md:table-cell">Galerie</th>
+                <th className="text-center px-4 py-3 text-xs tracking-widest uppercase text-ink/40 hidden sm:table-cell">À la une</th>
+                <th className="text-center px-4 py-3 text-xs tracking-widest uppercase text-ink/40 hidden sm:table-cell">Pos.</th>
+                <th className="text-right px-4 py-3 text-xs tracking-widest uppercase text-ink/40">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -94,18 +83,10 @@ export default function AdminPhotosPage() {
                     <p className="text-xs text-ink/40 font-mono">{photo.slug}</p>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    <span className="text-xs text-ink/60">
-                      {photo.category_name || "—"}
-                    </span>
+                    <span className="text-xs text-ink/60">{photo.category_name || "—"}</span>
                   </td>
                   <td className="px-4 py-3 text-center hidden sm:table-cell">
-                    <span
-                      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs ${
-                        photo.featured
-                          ? "bg-moss/20 text-moss"
-                          : "bg-ink/5 text-ink/30"
-                      }`}
-                    >
+                    <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs ${photo.featured ? "bg-moss/20 text-moss" : "bg-ink/5 text-ink/30"}`}>
                       {photo.featured ? "✓" : "–"}
                     </span>
                   </td>

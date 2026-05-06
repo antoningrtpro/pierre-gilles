@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { adminDb } from "@/lib/firebase-admin";
 import { requireAdmin } from "@/lib/adminAuth";
 import bcrypt from "bcryptjs";
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin(req);
   if (error) return error;
-
-  const db = getDb();
-  const rows = db.prepare("SELECT key, value FROM settings").all() as {
-    key: string;
-    value: string;
-  }[];
-  const settings = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-
-  return NextResponse.json(settings);
+  const doc = await adminDb.collection("config").doc("settings").get();
+  return NextResponse.json(doc.data() || {});
 }
 
 export async function PUT(req: NextRequest) {
@@ -23,10 +16,9 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const db = getDb();
-
     const {
       photographer_name,
+      hero_title,
       tagline,
       about_text,
       instagram_url,
@@ -38,58 +30,32 @@ export async function PUT(req: NextRequest) {
       new_password,
     } = body;
 
-    // Update site settings
-    const upsert = db.prepare(
-      "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)"
-    );
+    const updates: Record<string, string> = {};
+    if (photographer_name !== undefined) updates.photographer_name = photographer_name;
+    if (hero_title !== undefined) updates.hero_title = hero_title;
+    if (tagline !== undefined) updates.tagline = tagline;
+    if (about_text !== undefined) updates.about_text = about_text;
+    if (instagram_url !== undefined) updates.instagram_url = instagram_url;
+    if (hero_image !== undefined) updates.hero_image = hero_image;
+    if (hero_position !== undefined) updates.hero_position = hero_position;
+    if (portrait_image !== undefined) updates.portrait_image = portrait_image;
+    if (notification_email !== undefined) updates.notification_email = notification_email;
 
-    const updateSettings = db.transaction(() => {
-      if (photographer_name !== undefined)
-        upsert.run("photographer_name", photographer_name);
-      if (tagline !== undefined) upsert.run("tagline", tagline);
-      if (about_text !== undefined) upsert.run("about_text", about_text);
-      if (instagram_url !== undefined)
-        upsert.run("instagram_url", instagram_url);
-      if (hero_image !== undefined)
-        upsert.run("hero_image", hero_image);
-      if (hero_position !== undefined)
-        upsert.run("hero_position", hero_position);
-      if (portrait_image !== undefined)
-        upsert.run("portrait_image", portrait_image);
-      if (notification_email !== undefined)
-        upsert.run("notification_email", notification_email);
-    });
-    updateSettings();
+    if (Object.keys(updates).length > 0) {
+      await adminDb.collection("config").doc("settings").set(updates, { merge: true });
+    }
 
-    // Password change
     if (new_password) {
       if (!current_password) {
-        return NextResponse.json(
-          { error: "Mot de passe actuel requis." },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Mot de passe actuel requis." }, { status: 400 });
       }
-
-      const admin = db
-        .prepare("SELECT * FROM admin WHERE id = 1")
-        .get() as { password_hash: string } | undefined;
-      if (!admin) {
-        return NextResponse.json(
-          { error: "Admin introuvable." },
-          { status: 404 }
-        );
-      }
-
+      const adminDoc = await adminDb.collection("config").doc("admin").get();
+      if (!adminDoc.exists) return NextResponse.json({ error: "Admin introuvable." }, { status: 404 });
+      const admin = adminDoc.data() as { password_hash: string };
       const valid = await bcrypt.compare(current_password, admin.password_hash);
-      if (!valid) {
-        return NextResponse.json(
-          { error: "Mot de passe actuel incorrect." },
-          { status: 400 }
-        );
-      }
-
+      if (!valid) return NextResponse.json({ error: "Mot de passe actuel incorrect." }, { status: 400 });
       const hash = await bcrypt.hash(new_password, 12);
-      db.prepare("UPDATE admin SET password_hash = ? WHERE id = 1").run(hash);
+      await adminDb.collection("config").doc("admin").update({ password_hash: hash });
     }
 
     return NextResponse.json({ ok: true });

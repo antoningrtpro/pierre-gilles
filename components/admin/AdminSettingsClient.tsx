@@ -61,7 +61,8 @@ export default function AdminSettingsClient({
   /* ── Site info ──────────────────────────────────────────── */
   const [siteForm, setSiteForm] = useState({
     photographer_name: initialSettings.photographer_name || "Pierre G.",
-    tagline: initialSettings.tagline || "La nature dans ses instants les plus silencieux.",
+    hero_title: initialSettings.hero_title || "Pierre G.",
+    tagline: initialSettings.tagline || "Le monde vivant, saisi dans l'instant",
     about_text: initialSettings.about_text || "",
     instagram_url: initialSettings.instagram_url || "https://instagram.com/pierreg_photography",
     notification_email: initialSettings.notification_email || "",
@@ -170,9 +171,9 @@ export default function AdminSettingsClient({
             />
             <div className="absolute inset-x-0 bottom-0 flex items-end p-4 bg-gradient-to-t from-ink/60 to-transparent pointer-events-none">
               <div className="text-cream">
-                <p className="font-serif text-xl">Pierre G.</p>
+                <p className="font-serif text-xl">{siteForm.hero_title || "Pierre G."}</p>
                 <p className="text-xs opacity-70 tracking-widest uppercase mt-0.5">
-                  La nature dans ses instants les plus silencieux.
+                  {siteForm.tagline || "Le monde vivant, saisi dans l'instant"}
                 </p>
               </div>
             </div>
@@ -301,15 +302,29 @@ export default function AdminSettingsClient({
               onChange={(e) => setSiteForm({ ...siteForm, photographer_name: e.target.value })}
               className="admin-input"
             />
+            <p className="text-xs text-ink/35 mt-1">Utilisé dans les métadonnées du site.</p>
           </div>
           <div>
-            <label className="admin-label">Tagline</label>
+            <label className="admin-label">Titre de la page d&apos;accueil</label>
+            <input
+              type="text"
+              value={siteForm.hero_title}
+              onChange={(e) => setSiteForm({ ...siteForm, hero_title: e.target.value })}
+              className="admin-input"
+              placeholder="Pierre G."
+            />
+            <p className="text-xs text-ink/35 mt-1">Grand titre affiché au centre du hero.</p>
+          </div>
+          <div>
+            <label className="admin-label">Sous-titre de la page d&apos;accueil</label>
             <input
               type="text"
               value={siteForm.tagline}
               onChange={(e) => setSiteForm({ ...siteForm, tagline: e.target.value })}
               className="admin-input"
+              placeholder="Le monde vivant, saisi dans l'instant"
             />
+            <p className="text-xs text-ink/35 mt-1">Texte en dessous du titre, en majuscules.</p>
           </div>
           <div>
             <label className="admin-label">URL Instagram</label>
