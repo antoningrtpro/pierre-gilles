@@ -164,9 +164,8 @@ export default async function HomePage() {
                 </h2>
 
                 <div className="space-y-4 text-ink/70 text-base leading-relaxed mb-6">
-                  {aboutText.split("\n\n").filter(Boolean).map((para: string, i: number) => (
-                    <p key={i}>{para}</p>
-                  ))}
+                  <p>Photographe basé en France, Pierre G. capture paysages, faune et instants de vie à la recherche d&apos;images justes et sincères.</p>
+                  <p>Ses photographies sont proposées en tirages, pensés pour prolonger ces instants dans un espace de vie.</p>
                 </div>
 
                 {/* Traits */}
