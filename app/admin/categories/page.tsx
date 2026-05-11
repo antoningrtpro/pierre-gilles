@@ -1,8 +1,7 @@
-import Image from "next/image";
 import { adminDb } from "@/lib/firebase-admin";
 import { Category } from "@/lib/db";
-import { imageUrl, serializeDoc } from "@/lib/utils";
-import AdminCategoryActions from "@/components/admin/AdminCategoryActions";
+import { serializeDoc } from "@/lib/utils";
+import AdminCategoriesList from "@/components/admin/AdminCategoriesList";
 import AdminCategoryForm from "@/components/admin/AdminCategoryForm";
 import type { Metadata } from "next";
 
@@ -38,45 +37,7 @@ export default async function AdminCategoriesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* List */}
         <div className="lg:col-span-3">
-          {categories.length === 0 ? (
-            <div className="bg-white border border-ink/8 rounded-lg p-12 text-center text-ink/40 text-sm">
-              Aucune galerie. Créez-en une à droite.
-            </div>
-          ) : (
-            <div className="bg-white border border-ink/8 rounded-lg overflow-hidden">
-              {categories.map((cat, i) => (
-                <div
-                  key={cat.id}
-                  className={`flex items-center gap-4 px-4 py-3 ${
-                    i < categories.length - 1 ? "border-b border-ink/6" : ""
-                  } hover:bg-ink/1 transition-colors`}
-                >
-                  <div className="relative w-14 h-10 rounded overflow-hidden bg-ink/5 shrink-0">
-                    {cat.cover_image ? (
-                      <Image
-                        src={imageUrl(cat.cover_image)}
-                        alt={cat.name}
-                        fill
-                        className="object-cover"
-                        sizes="56px"
-                        unoptimized={cat.cover_image.startsWith("http")}
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-ink/10" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-ink">{cat.name}</p>
-                    <p className="text-xs text-ink/40 font-mono">{cat.slug}</p>
-                  </div>
-                  <span className="text-xs text-ink/40 shrink-0">
-                    {cat.photo_count ?? 0} photo{cat.photo_count !== 1 ? "s" : ""}
-                  </span>
-                  <AdminCategoryActions categoryId={cat.id} />
-                </div>
-              ))}
-            </div>
-          )}
+          <AdminCategoriesList categories={categories} />
         </div>
 
         {/* Form */}

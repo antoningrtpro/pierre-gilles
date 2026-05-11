@@ -22,6 +22,24 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(categories);
 }
 
+export async function PATCH(req: NextRequest) {
+  const { error } = await requireAdmin(req);
+  if (error) return error;
+  try {
+    const { orders } = await req.json() as { orders: { id: string; position: number }[] };
+    if (!Array.isArray(orders)) return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+    const batch = adminDb.batch();
+    for (const { id, position } of orders) {
+      batch.update(adminDb.collection("categories").doc(id), { position });
+    }
+    await batch.commit();
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Reorder categories error:", err);
+    return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin(req);
   if (error) return error;
