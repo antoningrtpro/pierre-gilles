@@ -17,24 +17,23 @@ export default function PhotoGallery({ images, title, minPrice }: PhotoGalleryPr
   return (
     <div className="flex flex-col h-full">
       {/* Main image */}
-      <div className="flex-1 flex items-center justify-center overflow-hidden">
+      <div className="flex-1 min-h-0 flex items-center justify-center p-4 md:p-6 lg:p-10 overflow-hidden">
         <div className="
-          m-4 md:m-6 lg:m-10
           bg-white
           shadow-[0_8px_48px_rgba(26,26,24,0.12)]
           flex flex-col
+          max-w-full max-h-full
+          min-w-0
         ">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl(images[selected])}
             alt={title}
-            className="block w-auto h-auto p-3 md:p-5"
+            className="block p-3 md:p-5 max-w-full max-h-full object-contain"
             style={{
-              maxWidth: "calc(100vw - 2rem)",
               maxHeight: images.length > 1
                 ? "calc(100dvh - 5rem - 41px - 9rem)"
-                : "calc(100dvh - 5rem - 41px - 6rem)",
-              objectFit: "contain",
+                : "calc(100dvh - 5rem - 41px - 4rem)",
             }}
           />
           <div className="px-3 md:px-5 pb-3 md:pb-4 flex items-center justify-between gap-4 shrink-0">
