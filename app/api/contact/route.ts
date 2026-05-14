@@ -39,8 +39,9 @@ export async function POST(req: NextRequest) {
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
         await resend.emails.send({
-          from: "Portfolio <onboarding@resend.dev>",
+          from: "Portfolio Pierre G. <onboarding@resend.dev>",
           to: notificationEmail,
+          replyTo: `${name.trim()} <${email.trim()}>`,
           subject: `📩 Nouvelle demande — ${resolvedSubject}${photo_title ? ` · ${photo_title}` : ""}`,
           html: `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a1a18">
             <h2 style="font-size:18px;margin-bottom:4px">Nouvelle demande de contact</h2>
