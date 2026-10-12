@@ -164,16 +164,17 @@ export default async function HomePage() {
                 </h2>
 
                 <div className="space-y-4 text-ink/70 text-base leading-relaxed mb-6">
-                  <p>Photographe basé en France, Pierre G. capture paysages, faune et instants de vie à la recherche d&apos;images justes et sincères.</p>
-                  <p>Ses photographies sont proposées en tirages, pensés pour prolonger ces instants dans un espace de vie.</p>
+                  <p>Passionné par la faune sauvage, je photographie les animaux dans leur environnement naturel, en privilégiant les rencontres spontanées et les comportements authentiques.</p>
+                  <p>De la Tanzanie à d&apos;autres régions du monde, je cherche à saisir les regards, les attitudes et les détails qui révèlent toute la singularité du monde animal.</p>
+                  <p>Mes images sont proposées en tirages d&apos;art en édition limitée, pour faire entrer une part du monde sauvage dans nos intérieurs.</p>
                 </div>
 
                 {/* Traits */}
                 <div className="space-y-3 mb-10">
                   {[
-                    { label: "Approche", value: "Lumière naturelle, contraste et instants justes" },
-                    { label: "Technique", value: "Tirage Fine Art sur papier satiné professionnel" },
-                    { label: "Territoire", value: "Faune & paysages — exploration du monde" },
+                    { label: "Approche", value: "Observation, lumière naturelle et authenticité" },
+                    { label: "Technique", value: "Tirages Fine Art sur papier satiné professionnel" },
+                    { label: "Univers", value: "Faune sauvage du monde entier" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline gap-4 border-b border-ink/8 pb-3">
                       <span className="text-xs tracking-widest uppercase text-ink/40 w-24 shrink-0">
