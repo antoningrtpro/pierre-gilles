@@ -3,13 +3,14 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Pierre G. — Photographie naturaliste",
-    template: "%s | Pierre G.",
+    default: "Pierre Gilles - Photographe animalier",
+    template: "%s | Pierre Gilles",
   },
   description:
     "La nature dans ses instants les plus silencieux. Photographie naturaliste par Pierre G.",
   openGraph: {
-    siteName: "Pierre G. Photography",
+    title: "Pierre Gilles - Photographe animalier",
+    siteName: "Pierre Gilles - Photographe animalier",
     locale: "fr_FR",
     type: "website",
   },
