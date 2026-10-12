@@ -225,7 +225,7 @@ export default async function PhotoPage({ params }: Props) {
                 <div className="space-y-3 mb-10">
                   {[
                     { label: "Approche", value: "Lumière naturelle, contraste et instants justes" },
-                    { label: "Technique", value: "Tirages Fine Art sur Hahnemühle" },
+                    { label: "Technique", value: "Tirage Fine Art sur papier satiné professionnel" },
                     { label: "Territoire", value: "Faune & paysages — exploration du monde" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline gap-4 border-b border-ink/8 pb-3">

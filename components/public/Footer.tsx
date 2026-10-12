@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="text-center md:text-left">
           <p className="font-serif text-lg text-ink">Pierre G.</p>
           <p className="text-xs tracking-widest uppercase text-ink/40 mt-1">
-            Photographie naturaliste
+            Photographe animalier
           </p>
         </div>
 

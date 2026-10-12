@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "À propos",
-  description: "Photographe naturaliste basé en France.",
+  description: "Photographe animalier basé en France.",
 };
 
 export default async function AboutPage() {
@@ -18,7 +18,7 @@ export default async function AboutPage() {
 
   const aboutText =
     settings.about_text ||
-    "Photographe naturaliste basé en France, Pierre G. parcourt les paysages sauvages à la recherche de la lumière fugace, du silence habité et des beautés discrètes du monde vivant.";
+    "Photographe animalier basé en France, Pierre G. parcourt les paysages sauvages à la recherche de la lumière fugace, du silence habité et des beautés discrètes du monde vivant.";
 
   const instagramUrl =
     settings.instagram_url || "https://instagram.com/pierreg_photography";
@@ -78,7 +78,7 @@ export default async function AboutPage() {
                 <div className="flex items-center gap-3">
                   <span className="w-8 h-px bg-moss" />
                   <span className="text-xs tracking-widest uppercase text-ink/50">
-                    Photographie naturaliste
+                    Photographe animalier
                   </span>
                 </div>
                 <div className="flex items-center gap-3">

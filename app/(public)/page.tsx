@@ -172,7 +172,7 @@ export default async function HomePage() {
                 <div className="space-y-3 mb-10">
                   {[
                     { label: "Approche", value: "Lumière naturelle, contraste et instants justes" },
-                    { label: "Technique", value: "Tirages Fine Art sur Hahnemühle" },
+                    { label: "Technique", value: "Tirage Fine Art sur papier satiné professionnel" },
                     { label: "Territoire", value: "Faune & paysages — exploration du monde" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-baseline gap-4 border-b border-ink/8 pb-3">
@@ -287,7 +287,7 @@ export default async function HomePage() {
                     </div>
                   ))}
                   <div className="px-4 py-3 bg-ink/2">
-                    <p className="text-xs text-ink/40">Formats disponibles : 30×40 cm ou 50×70 cm — Pas de numérique</p>
+                    <p className="text-xs text-ink/40">Formats disponibles : 30×40 cm ou 40×50 cm — Pas de numérique</p>
                   </div>
                 </div>
 
